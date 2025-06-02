@@ -60,10 +60,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnDeviceUpload: Button
     private lateinit var btnDevicePaste: Button
 
-    private lateinit var filesAdapter: FilesAdapter
-    private lateinit var rvFiles: RecyclerView
-    private lateinit var swipeRefreshLayoutFiles: SwipeRefreshLayout
-    private lateinit var tvEmptyViewFiles: TextView
 
 
     private var fileServerService: FileServerService? = null
@@ -259,29 +255,10 @@ class MainActivity : AppCompatActivity() {
         btnDeviceUpload = findViewById(R.id.btnDeviceUpload)
         btnDevicePaste = findViewById(R.id.btnDevicePaste)
 
-        rvFiles = findViewById(R.id.rvFiles)
-        swipeRefreshLayoutFiles = findViewById(R.id.swipeRefreshLayoutFiles)
-        tvEmptyViewFiles = findViewById(R.id.tvEmptyViewFiles)
-        setupRecyclerView()
 
         updateActionButtonStates(false) // Initially disabled
     }
-    private fun setupRecyclerView() {
-        filesAdapter = FilesAdapter(
-            onShareClick = { file -> shareFile(file) },
-            onDeleteClick = { file -> confirmDeleteFile(file) }
-        )
-        rvFiles.layoutManager = LinearLayoutManager(this)
-        rvFiles.adapter = filesAdapter
-        rvFiles.addItemDecoration(DividerItemDecoration(this, LinearLayoutManager.VERTICAL))
 
-        if (currentSelectedFolderUri != null) {
-            makeText(this, getString(R.string.refreshing_files), Toast.LENGTH_SHORT).show()
-            viewModel.loadFilesFromUri(applicationContext, currentSelectedFolderUri!!)
-        } else {
-            swipeRefreshLayoutFiles.isRefreshing = false
-        }
-        }
 
 
 
@@ -345,21 +322,6 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun observeViewModel() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.filesInSharedFolder.collect { files ->
-                    filesAdapter.submitList(files)
-                    tvEmptyViewFiles.visibility = if (files.isEmpty()) View.VISIBLE else View.GONE
-                    rvFiles.visibility = if (files.isEmpty()) View.GONE else View.VISIBLE
-                }
-            }
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.isLoadingFiles.collect { isLoading ->
-                    swipeRefreshLayoutFiles.isRefreshing = isLoading
-                }
-            }
-        }
-
         viewModel.selectedFolderUri.observe(this) { uri ->
             currentSelectedFolderUri = uri
             if (uri != null) {
