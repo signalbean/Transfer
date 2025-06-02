@@ -1,0 +1,198 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f6;
+    color: #333;
+    line-height: 1.6;
+}
+
+header {
+    background-color: #5D3FD3; /* A nice purple */
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+    border-bottom: 4px solid #4C2AA7;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.5em;
+}
+
+header p {
+    margin-top: 5px;
+    font-size: 1.1em;
+}
+
+main {
+    padding: 20px;
+    max-width: 1000px;
+    margin: 20px auto;
+    background-color: white;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+section:last-child {
+    border-bottom: none;
+}
+
+h2 {
+    color: #5D3FD3;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 5px;
+}
+
+#drop-zone {
+    border: 3px dashed #ccc;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    background-color: #fafafa;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+#drop-zone.dragover {
+    background-color: #e8e0ff;
+    border-color: #5D3FD3;
+}
+
+#drop-zone p {
+    margin: 0;
+    font-size: 1.1em;
+    color: #777;
+}
+
+#file-input {
+    display: none; /* Hidden, triggered by drop-zone click */
+}
+
+#upload-progress-container {
+    margin-top: 15px;
+}
+
+.progress-bar-item {
+    margin-bottom: 8px;
+    font-size: 0.9em;
+}
+.progress-bar {
+    width: 100%;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    height: 10px;
+    margin-top: 4px;
+}
+.progress-bar-fill {
+    height: 100%;
+    background-color: #76c7c0; /* Teal color */
+    width: 0%;
+    transition: width 0.2s;
+}
+.progress-bar-status {
+    margin-left: 10px;
+    font-style: italic;
+    font-size: 0.85em;
+}
+
+
+.table-container {
+    overflow-x: auto; /* For responsive tables on small screens */
+}
+
+#files-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+#files-table th, #files-table td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+#files-table th {
+    background-color: #f0ebff;
+    color: #333;
+    font-weight: bold;
+}
+
+#files-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#files-table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+.action-button, button {
+    padding: 8px 15px;
+    background-color: #5D3FD3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+    margin-right: 5px;
+}
+.action-button:hover, button:hover {
+    background-color: #4C2AA7;
+}
+.delete-button {
+    background-color: #e74c3c; /* Red for delete */
+}
+.delete-button:hover {
+    background-color: #c0392b;
+}
+
+
+#no-files-message {
+    text-align: center;
+    color: #777;
+    padding: 20px;
+    font-style: italic;
+}
+
+footer {
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 30px;
+    font-size: 0.9em;
+    color: #777;
+    border-top: 1px solid #eee;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2em;
+    }
+    main {
+        padding: 15px;
+        margin: 15px;
+    }
+    #drop-zone {
+        padding: 30px 15px;
+    }
+    .action-button, button {
+        padding: 10px; /* Make buttons easier to tap */
+        width: 100%;
+        margin-bottom: 8px;
+        box-sizing: border-box;
+    }
+    #files-table th, #files-table td {
+        padding: 8px;
+    }
+}

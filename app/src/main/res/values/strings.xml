@@ -1,0 +1,89 @@
+<resources>
+    <string name="app_name">Transfer</string>
+    <string name="select_folder_to_start">Select a folder to start the server</string>
+    <string name="server_address">Server Address:</string>
+    <string name="waiting_for_network">Waiting for network…</string>
+    <string name="copy_ip_address">Copy IP Address</string>
+    <string name="select_shared_folder">Select Shared Folder</string>
+    <string name="device_actions">Device Actions</string>
+    <string name="upload_file_to_shared_folder">Upload File to Shared Folder</string>
+    <string name="paste_clipboard_to_paste_txt">Paste Clipboard to paste.txt</string>
+    <string name="download_files_from_shared_folder">Manage/Download Shared Files</string>
+    <string name="no_folder_selected">No folder selected.</string>
+    <string name="selected_folder_is">Selected folder: %s</string>
+    <string name="settings">Settings</string>
+    <string name="action_settings">Action Settings</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="ip_copied_to_clipboard">IP Address copied to clipboard</string>
+    <string name="folder_selection_cancelled">Folder selection cancelled.</string>
+    <string name="server_running_on">Server running on: %s</string>
+    <string name="server_stopped">Server stopped</string>
+    <string name="server_not_started_no_folder">Server not started. Select a folder first.</string>
+    <string name="file_server_notification_title">Transfer Server Active</string>
+    <string name="file_server_notification_text">Access files at http://%s:%d</string>
+    <string name="notification_channel_name">File Server</string>
+    <string name="notification_channel_description">Shows when the Transfer server is running.</string>
+    <string name="error_getting_ip">Could not get IP address.</string>
+    <string name="error_starting_server">Error starting server: %s</string>
+    <string name="storage_permission_required">Storage permission for the selected folder is required.</string>
+    <string name="file_uploaded_successfully">File uploaded successfully.</string>
+    <string name="file_upload_failed">File upload failed.</string>
+    <string name="text_pasted_to_file">Text pasted to paste.txt</string>
+    <string name="clipboard_empty">Clipboard is empty or does not contain text.</string>
+    <string name="error_writing_paste_file">Error writing paste.txt: %s</string>
+    <string name="shared_text_saved">Shared text saved as text_share.txt</string>
+    <string name="shared_file_saved">Shared file saved: %s</string>
+    <string name="error_saving_shared_content">Error saving shared content.</string>
+    <string name="file_not_found">File not found</string>
+    <string name="error_listing_files">Error listing files</string>
+    <string name="permission_dialog_title">Connection Request</string>
+    <string name="permission_dialog_message">Allow computer at IP %s to access files?</string>
+    <string name="allow">Allow</string>
+    <string name="deny">Deny</string>
+    <string name="password_required_title">Password Required</string>
+
+    <string name="pref_category_security">Security</string>
+    <string name="pref_title_ip_permission">Display Permission Dialog</string>
+    <string name="pref_summary_ip_permission">Ask for permission for new IPs. Valid for 1 hour.</string>
+    <string name="pref_title_password_protect">Password Protect</string>
+    <string name="pref_summary_password_protect_off">Server is open. Click to set a password.</string>
+    <string name="pref_summary_password_protect_on">Server is password protected.</string>
+    <string name="pref_dialog_title_set_password">Set Access Password</string>
+    <string name="pref_key_ip_permission_enabled" translatable="false">ip_permission_enabled</string>
+    <string name="pref_key_server_password" translatable="false">server_password</string>
+    <string name="password_cleared">Password protection disabled.</string>
+    <string name="password_set">Password protection enabled.</string>
+    <string name="action_clear_password">Clear Password</string>
+    <string name="folder_not_accessible_select_again">The previously selected folder is no longer accessible. Please select it again.</string>
+    <string name="stop_server">Stop Server</string>
+    <string name="start_server">Start Server</string>
+    <string name="manage_files_title">Manage Files</string>
+    <string name="file_deleted">File deleted: %s</string>
+    <string name="delete_file_confirmation">Are you sure you want to delete %s?</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+
+<!--    SETUP-->
+    <string name="setup_title">Welcome to Transfer</string>
+    <string name="setup_description">To get started, please select a folder on your device that will be used for sharing files.</string>
+    <string name="choose_shared_folder">Choose Shared Folder</string>
+    <string name="folder_setup_complete">Folder selected. Starting Transfer app.</string>
+    <string name="folder_selection_required">Folder selection is required to use the app.</string>
+
+<!--    file list-->
+    <string name="no_files_in_shared_folder">No files here. Upload some!</string>
+    <string name="file_actions">File Actions</string>
+    <string name="action_share_file">Share</string>
+    <string name="action_delete_file">Delete</string>
+    <string name="confirm_delete_file_title">Confirm Delete</string>
+    <string name="confirm_delete_file_message">Are you sure you want to delete "%s"? This cannot be undone.</string>
+    <string name="file_deleted_successfully">File "%s" deleted.</string>
+    <string name="file_delete_failed">Failed to delete file "%s".</string>
+    <string name="refreshing_files">Refreshing file list…</string>
+
+    <string name="file_icon_desc">File icon</string>
+    <string name="file_actions_menu_desc">File actions menu</string>
+
+
+
+</resources>
