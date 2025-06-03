@@ -7,12 +7,14 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="grey_100">#F5F5F5</color>
-    <color name="grey_300">#E0E0E0</color>
-    <color name="dialog_permission_title_background">@color/purple_500</color>
-    <color name="dialog_permission_title_text">@color/white</color>
+
+    <color name="colorPrimary">#3F51B5</color> <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color> <color name="light_gray">#F5F5F5</color>
+    <color name="medium_gray">#9E9E9E</color>
+    <color name="dark_gray">#616161</color>
 
     <color name="green">#4CAF50</color>
     <color name="red">#F44336</color>
 
+    <color name="file_item_selected_background">#E8EAF6</color>
 </resources>

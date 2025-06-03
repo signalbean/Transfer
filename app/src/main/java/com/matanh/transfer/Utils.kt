@@ -2,16 +2,10 @@ package com.matanh.transfer
 
 import android.content.Context
 import android.content.Intent
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.net.Uri
 import android.net.wifi.WifiManager
 import android.provider.OpenableColumns
 import androidx.documentfile.provider.DocumentFile
-import java.io.File
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.io.OutputStream
 import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteOrder
@@ -122,12 +116,12 @@ object Utils {
 
         // Store the URI string for later use
         val prefs = context.getSharedPreferences(Constants.SHARED_PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(Constants.PREF_KEY_SELECTED_FOLDER_URI, uri.toString()).apply()
+        prefs.edit().putString(Constants.EXTRA_FOLDER_URI, uri.toString()).apply()
     }
 
     fun getPersistedUri(context: Context): Uri? {
         val prefs = context.getSharedPreferences(Constants.SHARED_PREFS_NAME, Context.MODE_PRIVATE)
-        val uriString = prefs.getString(Constants.PREF_KEY_SELECTED_FOLDER_URI, null)
+        val uriString = prefs.getString(Constants.EXTRA_FOLDER_URI, null)
         return uriString?.let { Uri.parse(it) }
     }
 
@@ -138,7 +132,7 @@ object Utils {
 
     fun clearPersistedUri(context: Context) {
         val prefs = context.getSharedPreferences(Constants.SHARED_PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().remove(Constants.PREF_KEY_SELECTED_FOLDER_URI).apply()
+        prefs.edit().remove(Constants.EXTRA_FOLDER_URI).apply()
     }
 
     fun formatFileSize(size: Long): String {
@@ -147,4 +141,9 @@ object Utils {
         val digitGroups = (Math.log10(size.toDouble()) / Math.log10(1024.0)).toInt()
         return String.format("%.1f %s", size / Math.pow(1024.0, digitGroups.toDouble()), units[digitGroups])
     }
+    fun canWriteToUri(context: Context, uri: Uri): Boolean {
+        val docFile = DocumentFile.fromTreeUri(context, uri) // Or fromSingleUri if it's not a tree
+        return docFile?.canWrite() == true
+    }
+
 }

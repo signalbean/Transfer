@@ -84,6 +84,41 @@
     <string name="file_icon_desc">File icon</string>
     <string name="file_actions_menu_desc">File actions menu</string>
 
+<!--    just for accesses-->
+
+    <string name="file_type_icon">File type icon</string>
+    <string name="selection_indicator">Selection indicator</string>
+    <string name="share_files">Share Files</string>
+    <string name="delete_files">Delete Files</string>
+    <string name="selected_items_count">%d selected</string>
+    <string name="action_select_all">Select All</string>
+    <string name="upload_file">Upload File</string>
+<!--    for the new UI-->
+    <string name="server_status_placeholder">Server Status</string>
+    <string name="copy_ip_description">Copy IP Address</string>
+    <string name="file_list_description">List of shared files</string>
+
+    <string name="server_running">Server Running</string>
+
+    <string name="server_error_format">Error: %s</string>
+    <string name="permission_request_title">Permission Request</string>
+    <string name="permission_request_message">Allow access from %s?</string>
+    <string name="share_file_title">Share %s</string>
+    <string name="share_file_error">Could not share file: %s</string>
+    <string name="cannot_read_file_share">Cannot read file to share.</string>
+    <string name="no_readable_files_share">No readable files selected to share.</string>
+    <string name="share_multiple_files_title">Share %d files</string>
+    <string name="confirm_delete_multiple_title">Delete %d Files?</string>
+    <string name="confirm_delete_multiple_message">Are you sure you want to delete these %d files? This action cannot be undone.</string>
+    <string name="files_deleted_successfully">%d files deleted</string>
+    <string name="failed_to_paste_text">Failed to paste text</string>
+    <string name="no_text_in_clipboard">No text in clipboard to paste</string>
+    <string name="paste_from_clipboard">Paste from Clipboard</string>
+
+    <string name="pref_key_selected_folder_uri">selected_folder_uri</string>
+    <string name="extra_folder_uri">FOLDER_URI</string>
+
+
 
 
 </resources>

@@ -19,7 +19,7 @@ class SetupActivity : AppCompatActivity() {
                 Utils.persistUriPermission(this, uri) // Persist permission
                 // Store the URI so MainActivity can pick it up
                 val prefs = getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
-                prefs.edit().putString(Constants.PREF_KEY_SELECTED_FOLDER_URI, uri.toString()).apply()
+                prefs.edit().putString(Constants.EXTRA_FOLDER_URI, uri.toString()).apply()
 
                 Toast.makeText(this, getString(R.string.folder_setup_complete), Toast.LENGTH_SHORT).show()
                 launchMainActivity()
@@ -36,7 +36,7 @@ class SetupActivity : AppCompatActivity() {
 //        val persistedUriString = Utils.getPersistedUri(this)?.toString()
         val prefs = getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
 
-        val persistedUriString = prefs.getString(Constants.PREF_KEY_SELECTED_FOLDER_URI, null)
+        val persistedUriString = prefs.getString(Constants.EXTRA_FOLDER_URI, null)
 
         if (!persistedUriString.isNullOrEmpty()) {
             val persistedUri = persistedUriString.toUri()

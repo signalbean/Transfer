@@ -1,62 +1,59 @@
-<androidx.cardview.widget.CardView android:layout_width="match_parent"
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    android:padding="12dp"
+    android:background="?android:attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <ImageView
+        android:id="@+id/ivFileIcon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_file_generic"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintBottom_toBottomOf="parent"
+    android:contentDescription="file icon" />
+
+    <TextView
+        android:id="@+id/tvFileName"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp"
-        android:gravity="center_vertical">
+        android:layout_marginStart="12dp"
+        android:textAppearance="?attr/textAppearanceListItem"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        app:layout_constraintStart_toEndOf="@id/ivFileIcon"
+        app:layout_constraintTop_toTopOf="@id/ivFileIcon"
+        app:layout_constraintEnd_toStartOf="@+id/ivSelectionCheck"
+        tools:text="MyDocument.pdf" />
 
-        <CheckBox
-            android:id="@+id/cbSelect"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+    <TextView
+        android:id="@+id/tvFileSize"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceListItemSecondary"
+        android:textSize="12sp"
+        android:textColor="@color/dark_gray"
+        app:layout_constraintStart_toStartOf="@id/tvFileName"
+        app:layout_constraintTop_toBottomOf="@id/tvFileName"
+        app:layout_constraintEnd_toEndOf="@id/tvFileName"
+        tools:text="1.2 MB" />
 
-        <ImageView
-            android:id="@+id/ivFileIcon"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@android:drawable/ic_menu_gallery" />
+    <ImageView
+        android:id="@+id/ivSelectionCheck"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_check_circle"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintBottom_toBottomOf="parent"
+    android:visibility="gone"
+    app:tint="?attr/colorAccent"
+    android:contentDescription="select checkbx"/>
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tvFileName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="File Name"
-                android:textSize="16sp" />
-
-            <TextView
-                android:id="@+id/tvFileSize"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="File Size"
-                android:textSize="12sp" />
-
-        </LinearLayout>
-
-        <ImageButton
-            android:id="@+id/btnShare"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@android:drawable/ic_menu_share"
-            android:contentDescription="Share"
-            />
-
-        <ImageButton
-            android:id="@+id/btnDelete"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@android:drawable/ic_menu_delete"
-            android:contentDescription="Delete" />
-
-    </LinearLayout>
-</androidx.cardview.widget.CardView>
+</androidx.constraintlayout.widget.ConstraintLayout>
