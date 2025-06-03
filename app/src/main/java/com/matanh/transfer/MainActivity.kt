@@ -431,34 +431,67 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 fileServerService!!.ipPermissionRequests.collect { request ->
+                    // 'request' is the IpPermissionRequest from the service, containing the specific IP and Deferred.
+                    val currentRequestIp = request.ipAddress
+                    val currentRequestDeferred = request.deferred
+
+
                     // Dismiss any existing dialog for this IP first
                     ipPermissionDialogs[request.ipAddress]?.dismiss()
+                    // Forward declaration of the dialog variable so it can be captured by listeners if needed,
+                    // though direct use in listeners for map checking is complex.
+                    lateinit var dialogInstance: AlertDialog
 
-                    val dialog = MaterialAlertDialogBuilder(this@MainActivity)
+                    dialogInstance = MaterialAlertDialogBuilder(this@MainActivity)
                         .setTitle(getString(R.string.permission_dialog_title))
-                        .setMessage(getString(R.string.permission_dialog_message, request.ipAddress))
+                        .setMessage(getString(R.string.permission_dialog_message, currentRequestIp))
                         .setCancelable(false)
                         .setPositiveButton(getString(R.string.allow)) { _, _ ->
-                            pendingIpApprovals.remove(request.ipAddress)?.complete(true)
-                            ipPermissionDialogs.remove(request.ipAddress)
-                        }
-                        .setNegativeButton(getString(R.string.deny)) { _, _ ->
-                            pendingIpApprovals.remove(request.ipAddress)?.complete(false)
-                            ipPermissionDialogs.remove(request.ipAddress)
-                        }
-                        .setOnDismissListener {
-                            // If dismissed without button click (e.g. screen rotation if not handled)
-                            // default to deny for safety, or handle state restoration for dialogs.
-                            if (pendingIpApprovals.containsKey(request.ipAddress)) {
-                                pendingIpApprovals.remove(request.ipAddress)?.complete(false)
+                            // Complete THIS dialog's specific deferred with true.
+                            currentRequestDeferred.complete(true)
+                            // Clean up: If this IP's current mapped deferred is the one we just completed, remove it.
+                            if (pendingIpApprovals[currentRequestIp] == currentRequestDeferred) {
+                                pendingIpApprovals.remove(currentRequestIp)
                             }
-                            ipPermissionDialogs.remove(request.ipAddress)
+                            // If the dialog instance in the map is the one we are handling, remove it.
+                            if (ipPermissionDialogs[currentRequestIp] == dialogInstance) {
+                                ipPermissionDialogs.remove(currentRequestIp)
+                            }
                         }
-                        .create()
+                        .setNegativeButton(getString(R.string.deny)) { _, _ -> // *** This line sets the "Deny" button ***
+                            // Negative button logic
+                            currentRequestDeferred.complete(false)
+                            if (pendingIpApprovals[currentRequestIp] == currentRequestDeferred) {
+                                pendingIpApprovals.remove(currentRequestIp)
+                            }
+                            if (ipPermissionDialogs[currentRequestIp] == dialogInstance) {
+                                ipPermissionDialogs.remove(currentRequestIp)
+                            }
+                        }
 
-                    pendingIpApprovals[request.ipAddress] = request.deferred // Store the deferred from service
-                    ipPermissionDialogs[request.ipAddress] = dialog
-                    dialog.show()
+
+                        .setOnDismissListener {
+                            // This dialog (for currentRequestDeferred) is dismissed.
+                            // If not already completed by buttons, mark as denied.
+                            // complete() is idempotent.
+                            currentRequestDeferred.complete(false)
+
+                            if (pendingIpApprovals[currentRequestIp] == currentRequestDeferred) {
+                                pendingIpApprovals.remove(currentRequestIp)
+                            }
+                            // 'dialogInstance' refers to the dialog this listener is attached to.
+                            if (ipPermissionDialogs[currentRequestIp] == dialogInstance) {
+                                ipPermissionDialogs.remove(currentRequestIp)
+                            }
+                        }
+
+                        .create() // 'dialog' is now the created AlertDialog instance
+
+                    // Update the maps with the new request's deferred and dialog instance.
+                    pendingIpApprovals[currentRequestIp] = currentRequestDeferred
+                    ipPermissionDialogs[currentRequestIp] = dialogInstance
+                    dialogInstance.show()
+
                 }
             }
         }

@@ -234,7 +234,12 @@ fun Application.transferServerModule(
             preCompressed(CompressedFileType.GZIP) // If you have pre-gzipped assets
             default("index.html") // Serve index.html for requests to /assets/
         }
-        // Redirect root to the assets' index.html
+
+
+
+        // API routes should be authenticated if password is set
+        // And all routes (including static after this point if not careful) are subject to IP approval
+        authenticate("auth-basic", optional = !fileServerService.isPasswordProtectionEnabled()) {
         get("/") {
             val isCurl = call.attributes.getOrNull(IsCurlRequestKey) == true
             if (isCurl) { // cURL: List files as plain text
@@ -261,12 +266,6 @@ fun Application.transferServerModule(
                 )
             }
         }
-
-
-
-        // API routes should be authenticated if password is set
-        // And all routes (including static after this point if not careful) are subject to IP approval
-        authenticate("auth-basic", optional = !fileServerService.isPasswordProtectionEnabled()) {
 
 
 
