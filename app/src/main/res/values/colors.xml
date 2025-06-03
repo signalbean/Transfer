@@ -11,4 +11,8 @@
     <color name="grey_300">#E0E0E0</color>
     <color name="dialog_permission_title_background">@color/purple_500</color>
     <color name="dialog_permission_title_text">@color/white</color>
+
+    <color name="green">#4CAF50</color>
+    <color name="red">#F44336</color>
+
 </resources>

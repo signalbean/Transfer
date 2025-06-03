@@ -1,161 +1,91 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:background="@android:color/white">
 
-    <com.google.android.material.appbar.AppBarLayout
+    <!-- Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:layout_constraintTop_toTopOf="parent"
+        app:titleTextColor="@android:color/white" />
+
+    <!-- Server Controls Card -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardServerControls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/Theme.Transfer.AppBarOverlay">
-
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:popupTheme="@style/Theme.Transfer.PopupOverlay" />
-
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="16dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <TextView
-            android:id="@+id/tvServerStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/select_folder_to_start"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
-
-        <TextView
-            android:id="@+id/tvIpAddressLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/server_address"
-            android:layout_marginTop="16dp"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-            app:layout_constraintTop_toBottomOf="@id/tvServerStatus"
-            app:layout_constraintStart_toStartOf="parent"/>
-
-        <TextView
-            android:id="@+id/tvIpAddress"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="@string/waiting_for_network"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:padding="8dp"
-            android:background="?attr/colorSurfaceContainerHighest"
-            app:layout_constraintTop_toBottomOf="@id/tvIpAddressLabel"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/btnCopyIp"
-            app:layout_constraintBottom_toBottomOf="@id/btnCopyIp"/>
-
-        <ImageButton
-            android:id="@+id/btnCopyIp"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:src="@drawable/ic_copy"
-            android:contentDescription="@string/copy_ip_address"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="12dp"
-            app:layout_constraintDimensionRatio="1:1"
-            app:layout_constraintTop_toTopOf="@id/tvIpAddress"
-            app:layout_constraintBottom_toBottomOf="@id/tvIpAddress"
-            app:layout_constraintEnd_toEndOf="parent"/>
-
-
-        <Button
-            android:id="@+id/btnSelectFolder"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="@string/select_shared_folder"
-            app:icon="@drawable/ic_folder"
-            android:layout_marginTop="24dp"
-            app:layout_constraintTop_toBottomOf="@id/tvIpAddress"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+        android:layout_margin="16dp"
+        app:cardElevation="4dp"
+        app:cardCornerRadius="8dp"
+        app:layout_constraintTop_toBottomOf="@id/toolbar">
 
         <LinearLayout
-            android:id="@+id/layoutActions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginTop="16dp"
-            app:layout_constraintTop_toBottomOf="@id/btnSelectFolder"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
+            android:padding="16dp">
 
+            <!-- Server Status -->
             <TextView
+                android:id="@+id/tvServerStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/device_actions"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
-                android:layout_marginBottom="8dp"/>
+                android:text="Server Status"
+                android:textSize="16sp" />
 
-
-            <Button
-                android:id="@+id/btnDeviceUpload"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            <!-- IP Address with Copy Button -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/upload_file_to_shared_folder"
-                app:icon="@drawable/ic_upload_device"
-                android:layout_marginBottom="8dp"/>
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
 
-            <Button
-                android:id="@+id/btnDevicePaste"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:icon="@drawable/ic_paste"
-                android:text="@string/paste_clipboard_to_paste_txt"
-                android:layout_marginBottom="8dp"/>
+                <TextView
+                    android:id="@+id/tvIpAddress"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="IP Address"
+                    android:textSize="14sp" />
 
+                <ImageButton
+                    android:id="@+id/btnCopyIp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_copy"
+                    android:contentDescription="Copy IP" />
+
+            </LinearLayout>
+
+            <!-- Toggle Server Button -->
             <Button
-                android:id="@+id/btnDeviceDownload"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
+                android:id="@+id/btnToggleServer"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:icon="@drawable/ic_download_device"
-                android:text="@string/download_files_from_shared_folder"
-                android:layout_marginBottom="8dp"
-                android:enabled="true"
-                />
+                android:layout_gravity="center"
+                android:layout_marginTop="16dp"
+                android:text="Start Server"
+                style="@style/Widget.MaterialComponents.Button" />
+
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/tvSelectedFolder"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="@string/no_folder_selected"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-            android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@id/layoutActions"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+    </androidx.cardview.widget.CardView>
 
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- File List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvFiles"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin="8dp"
+        app:layout_constraintTop_toBottomOf="@id/cardServerControls"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:contentDescription="file list"
+        />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabSettings"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:contentDescription="@string/settings"
-        app:srcCompat="@drawable/ic_settings" />
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

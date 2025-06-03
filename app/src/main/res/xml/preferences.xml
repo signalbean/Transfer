@@ -17,4 +17,10 @@
             app:dialogTitle="@string/pref_dialog_title_set_password"
             app:useSimpleSummaryProvider="false"/> </PreferenceCategory>
 
+    <Preference
+        app:key="pref_key_shared_folder"
+        app:title="Shared Folder"
+        app:summary="Select the folder to share" />
+
+
 </PreferenceScreen>
