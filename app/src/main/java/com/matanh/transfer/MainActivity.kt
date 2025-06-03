@@ -59,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var fabSettings: FloatingActionButton
     private lateinit var btnDeviceUpload: Button
     private lateinit var btnDevicePaste: Button
+    private lateinit var btnDeviceDownload: Button
 
 
 
@@ -254,6 +255,7 @@ class MainActivity : AppCompatActivity() {
         fabSettings = findViewById(R.id.fabSettings)
         btnDeviceUpload = findViewById(R.id.btnDeviceUpload)
         btnDevicePaste = findViewById(R.id.btnDevicePaste)
+        btnDeviceDownload = findViewById(R.id.btnDeviceDownload)
 
 
         updateActionButtonStates(false) // Initially disabled
@@ -297,7 +299,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // btnDeviceDownload.setOnClickListener { /* Implement file listing and copy-to logic */ }
+         btnDeviceDownload.setOnClickListener {
+             Log.i("MainActivity", "open folder:$currentSelectedFolderUri")
+             openFolder(currentSelectedFolderUri!!)
+         }
     }
 
     private fun pasteClipboardContent(destinationDirUri: Uri) {
@@ -375,6 +380,14 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+    private fun openFolder(folderUri: Uri){
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(folderUri, "vnd.android.document/directory")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        startActivity(intent)
+
     }
     // Helper methods for file actions:
     private fun shareFile(file: DocumentFile) {
@@ -498,7 +511,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateActionButtonStates(isFolderSelectedAndServerPotentiallyRunning: Boolean) {
         btnDeviceUpload.isEnabled = isFolderSelectedAndServerPotentiallyRunning
         btnDevicePaste.isEnabled = isFolderSelectedAndServerPotentiallyRunning
-        // btnDeviceDownload.isEnabled = isFolderSelectedAndServerPotentiallyRunning
+         btnDeviceDownload.isEnabled = isFolderSelectedAndServerPotentiallyRunning
     }
 
 

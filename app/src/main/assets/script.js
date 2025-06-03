@@ -73,8 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Or for form data: new URLSearchParams({ 'filename': fileName })
             });
             const result = await response.json();
-            if (result.success) {
-                alert(result.message || `File "${fileName}" deleted successfully.`);
+            if (response.ok) {
                 fetchFiles(); // Refresh file list
             } else {
                 alert(`Error deleting file: ${result.error || 'Unknown error'}`);
