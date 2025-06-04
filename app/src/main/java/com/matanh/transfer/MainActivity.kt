@@ -189,9 +189,6 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.files.observe(this) { files ->
             fileAdapter.updateFiles(files)
-            if (files.isEmpty() && currentSelectedFolderUri != null) {
-                // Optionally show an empty state message
-            }
         }
         viewModel.selectedFolderUri.observe(this) { uri ->
             uri?.let {

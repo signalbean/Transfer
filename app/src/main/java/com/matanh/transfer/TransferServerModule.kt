@@ -1,14 +1,9 @@
-package com.matanh.transfer.server // Or com.matanh.transfer
+package com.matanh.transfer // Or com.matanh.transfer
 
 import android.content.Context
 import android.net.Uri
-import android.provider.OpenableColumns
-import android.util.Base64
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
-import com.matanh.transfer.FileServerService
-import com.matanh.transfer.R
-import com.matanh.transfer.Utils
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
@@ -25,17 +20,14 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.util.AttributeKey
 import io.ktor.util.pipeline.PipelineContext
 import io.ktor.utils.io.ByteReadChannel
-import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.jvm.javaio.copyTo
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.json.JSONObject
-import java.io.File
-import java.io.InputStream
 import java.net.URLDecoder
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -44,7 +36,7 @@ import java.util.TimeZone
 const val TAG_KTOR_MODULE = "TransferKtorModule"
 
 // --- custom plugin to detect curl
-private val IsCurlRequestKey = io.ktor.util.AttributeKey<Boolean>("IsCurlRequestKey")
+private val IsCurlRequestKey = AttributeKey<Boolean>("IsCurlRequestKey")
 
 val CurlDetectorPlugin = createApplicationPlugin(name = "CurlDetectorPlugin") {
     onCall { call ->
@@ -85,7 +77,7 @@ val IpAddressApprovalPlugin = createApplicationPlugin(name = "IpAddressApprovalP
     }
 }
 private val KEY_SERVICE_PROVIDER =
-    io.ktor.util.AttributeKey<() -> FileServerService?>("ServiceProviderKey")
+    AttributeKey<() -> FileServerService?>("ServiceProviderKey")
 
 
 // --- Ktor Application Module Definition ---
@@ -300,7 +292,7 @@ fun Application.transferServerModule(
                                     lastModified = dateFormat.format(lastModifiedDate),
                                     type = docFile.type ?: "unknown",
                                     downloadUrl = "/api/download/${
-                                        java.net.URLEncoder.encode(
+                                        URLEncoder.encode(
                                             docFile.name,
                                             "UTF-8"
                                         )
