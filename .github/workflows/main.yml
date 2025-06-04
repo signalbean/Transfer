@@ -1,0 +1,43 @@
+name: Build & Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Decrypt keystore
+        run: |
+          gpg --batch --yes --passphrase "${{ secrets.GPG_PASSWORD }}" \
+              -o keystore/transfer-key.jks \
+              -d keystore/transfer-key.jks.gpg
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Build Signed APK
+        run: ./gradlew assembleRelease
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          # KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload APK to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: app/build/outputs/apk/release/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
