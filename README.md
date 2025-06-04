@@ -2,6 +2,8 @@
 
 **Transform your Android device into a wireless, browser-accessible drive. Simple, fast, and surprisingly versatile.**
 
+![screenshot of the app](data/screenshot_rect3.png)
+
 Transfer makes sharing files across your local network incredibly straightforward. Think of it as a temporary USB stick you can access from any computer or device with a web browser, but without the physical stick, powered by a clean and simple UI.
 
 Basically, a better alterntive to running `uploadserver` through termux
@@ -9,7 +11,7 @@ Basically, a better alterntive to running `uploadserver` through termux
 ## The Problem It Solves
 Imagine you need to transfer a file between your laptop and desktop.
 
-* Email/Cloud - will take more time. additionally, you might not have accses to.
+* Email/Cloud - will usually take more time. additionally, you might not have accses to them.
 * No USB stick.
 * SMB - you dont want to sit and configure both computers to serve/listen to samba. it requires you to install (on linux/mac)/enable it on one, enable discovery, which might be block due to company policy,etc.
 
@@ -41,7 +43,7 @@ Imagine you need to transfer a file between your laptop and desktop.
 ## Getting Started
 
 1.  Install and open Transfer on your Android device.
-2.  Grant necessary permissions and select a folder you wish to share (I suggest you create new folder called `Storage` the home folder,which the picker should should open it.)
+2.  Grant necessary permissions and select a folder you wish to share (I suggest you create new folder called `Storage` in the home folder)
 3.  Tap "Start Server."
 4.  The app will display an IP address (e.g., `http://192.168.1.X:PORT`).
 5.  Open this address in a web browser on any other device connected to the same Wi-Fi network.
