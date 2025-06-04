@@ -20,7 +20,7 @@ class SettingsActivity : AppCompatActivity() {
         if (uri != null) {
             Utils.persistUriPermission(this, uri)
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-            prefs.edit { putString("pref_key_shared_folder_uri", uri.toString()) }
+            prefs.edit { putString(Constants.EXTRA_FOLDER_URI, uri.toString()) }
             Toast.makeText(this, "Shared folder selected", Toast.LENGTH_SHORT).show()
         }
     }
@@ -82,7 +82,7 @@ class SettingsActivity : AppCompatActivity() {
 
         private fun updateFolderSummary() {
             val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
-            val uriString = prefs.getString("pref_key_shared_folder_uri", null)
+            val uriString = prefs.getString(Constants.EXTRA_FOLDER_URI, null)
             val folderPreference = findPreference<Preference>("pref_key_shared_folder")
             if (uriString != null) {
                 val uri = uriString.toUri()

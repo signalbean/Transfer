@@ -28,14 +28,14 @@ class FileAdapter(
         fun bind(file: FileItem, position: Int, isSelected: Boolean) {
             tvName.text = file.name
             tvSize.text = Utils.formatFileSize(file.size)
-            // TODO: Set ivIcon based on file type
-            // Example: ivIcon.setImageResource(Utils.getFileIcon(file.name))
+
 
             if (isSelected) {
                 itemLayout.setBackgroundColor(ContextCompat.getColor(itemView.context, R.color.file_item_selected_background))
                 ivSelectionCheck.visibility = View.VISIBLE
             } else {
-                itemLayout.setBackgroundColor(Color.TRANSPARENT) // Or your default item background
+                itemLayout.setBackgroundColor(ContextCompat.getColor(itemView.context, R.color.default_file_item_background))
+
                 ivSelectionCheck.visibility = View.GONE
             }
 
