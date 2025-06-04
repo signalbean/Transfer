@@ -22,8 +22,8 @@ jobs:
       - name: Decrypt keystore
         run: |
           gpg --batch --yes --passphrase "${{ secrets.GPG_PASSWORD }}" \
-              -o keystore/transfer-key.jks \
-              -d keystore/transfer-key.jks.gpg
+              -o app/keystore/transfer-key.jks \
+              -d app/keystore/transfer-key.jks.gpg
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
