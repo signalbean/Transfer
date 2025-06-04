@@ -16,4 +16,4 @@
 .cxx
 local.properties
 
-/keystore/transfer-key.jks
+*/keystore/transfer-key.jks
