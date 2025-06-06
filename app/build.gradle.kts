@@ -61,6 +61,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.ktor.serialization.kotlinx.json.jvm) // For JSON
+    implementation(libs.ktor.serialization.kotlinx.json) // important for kt "Serializable"
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -75,19 +77,13 @@ dependencies {
 
     // Ktor Features
     implementation(libs.ktor.server.content.negotiation.jvm)
-    implementation(libs.ktor.serialization.kotlinx.json.jvm) // For JSON
-    implementation(libs.ktor.server.html.builder.jvm) // Optional: if you build HTML with Ktor DSL
-    implementation(libs.ktor.server.host.common.jvm) // For serving static resources
+    implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.status.pages.jvm)
     implementation(libs.ktor.server.auth.jvm) // For Basic Auth
     implementation(libs.ktor.server.cors.jvm)
     implementation(libs.ktor.server.call.logging.jvm) // Optional logging
 
-    implementation(libs.ktor.server.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
 
-    implementation(libs.androidx.activity)
-    implementation(libs.androidx.swiperefreshlayout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
