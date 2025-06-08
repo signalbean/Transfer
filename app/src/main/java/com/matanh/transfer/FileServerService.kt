@@ -252,7 +252,7 @@ class FileServerService : Service() {
         return NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID)
             .setContentTitle(getString(R.string.file_server_notification_title))
             .setContentText(getString(R.string.file_server_notification_text, ipAddress, port))
-            .setSmallIcon(R.drawable.ic_stat_name) // Replace with your notification icon
+            .setSmallIcon(R.drawable.ic_stat_name)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .build()

@@ -1,36 +1,40 @@
 <resources>
     <string name="app_name">Transfer</string>
-    <string name="select_folder_to_start">Select a folder to start the server</string>
-    <string name="server_address">Server Address:</string>
     <string name="waiting_for_network">Waiting for network…</string>
+<!--    TODO: tooltips:-->
     <string name="copy_ip_address">Copy IP Address</string>
-    <string name="select_shared_folder">Select Shared Folder</string>
-    <string name="device_actions">Device Actions</string>
     <string name="upload_file_to_shared_folder">Upload File to Shared Folder</string>
-    <string name="paste_clipboard_to_paste_txt">Paste Clipboard to paste.txt</string>
-    <string name="download_files_from_shared_folder">Manage/Download Shared Files</string>
-    <string name="no_folder_selected">No folder selected.</string>
-    <string name="selected_folder_is">Selected folder: %s</string>
+
     <string name="settings">Settings</string>
     <string name="action_settings">Action Settings</string>
+
     <string name="title_activity_settings">Settings</string>
     <string name="ip_copied_to_clipboard">IP Address copied to clipboard</string>
+
     <string name="folder_selection_cancelled">Folder selection cancelled.</string>
-    <string name="server_running_on">Server running on: %s</string>
     <string name="server_stopped">Server stopped</string>
-    <string name="server_not_started_no_folder">Server not started. Select a folder first.</string>
+<!--    FIXME: notifications-->
     <string name="file_server_notification_title">Transfer Server Active</string>
     <string name="file_server_notification_text">Access files at http://%s:%d</string>
     <string name="notification_channel_name">File Server</string>
     <string name="notification_channel_description">Shows when the Transfer server is running.</string>
-    <string name="error_getting_ip">Could not get IP address.</string>
-    <string name="error_starting_server">Error starting server: %s</string>
-    <string name="storage_permission_required">Storage permission for the selected folder is required.</string>
-    <string name="file_uploaded_successfully">File uploaded successfully.</string>
-    <string name="file_upload_failed">File upload failed.</string>
+    <string name="no_write_permission">No write permission for the selected folder. Please re-select in settings.</string>
+
+
+
+    <string name="shared_folder_not_selected">Shared folder not selected.</string>
+    <string name="file_upload_failed">Failed to upload file.</string>
+    <string name="select_shared_folder_prompt">Please select a shared folder in settings.</string>
+    <string name="error_parsing_folder_uri">Error: Could not parse selected folder URI.</string>
+    <string name="file_uploaded">File uploaded: %s</string>
+    <string name="no_files_selected">No files selected.</string>
+
+
+
+
     <string name="text_pasted_to_file">Text pasted to %s</string>
     <string name="clipboard_empty">Clipboard is empty or does not contain text.</string>
-    <string name="error_writing_paste_file">Error writing paste.txt: %s</string>
+<!--    TODO: share-->
     <string name="shared_text_saved">Shared text saved as text_share.txt</string>
     <string name="shared_file_saved">Shared file saved: %s</string>
     <string name="error_saving_shared_content">Error saving shared content.</string>
@@ -40,7 +44,6 @@
     <string name="permission_dialog_message">Allow computer at IP %s to access files?</string>
     <string name="allow">Allow</string>
     <string name="deny">Deny</string>
-    <string name="password_required_title">Password Required</string>
 
     <string name="pref_category_security">Security</string>
     <string name="pref_title_ip_permission">Display Permission Dialog</string>
@@ -53,13 +56,7 @@
     <string name="pref_key_server_password" translatable="false">server_password</string>
     <string name="password_cleared">Password protection disabled.</string>
     <string name="password_set">Password protection enabled.</string>
-    <string name="action_clear_password">Clear Password</string>
     <string name="folder_not_accessible_select_again">The previously selected folder is no longer accessible. Please select it again.</string>
-    <string name="stop_server">Stop Server</string>
-    <string name="start_server">Start Server</string>
-    <string name="manage_files_title">Manage Files</string>
-    <string name="file_deleted">File deleted: %s</string>
-    <string name="delete_file_confirmation">Are you sure you want to delete %s?</string>
     <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>
 
@@ -68,11 +65,9 @@
     <string name="setup_description">To get started, please select a folder on your device that will be used for sharing files.</string>
     <string name="choose_shared_folder">Choose Shared Folder</string>
     <string name="folder_setup_complete">Folder selected. Starting Transfer app.</string>
-    <string name="folder_selection_required">Folder selection is required to use the app.</string>
 
 <!--    file list-->
     <string name="no_files_in_shared_folder">No files here. Upload some!</string>
-    <string name="file_actions">File Actions</string>
     <string name="action_share_file">Share</string>
     <string name="action_delete_file">Delete</string>
     <string name="confirm_delete_file_title">Confirm Delete</string>
@@ -81,8 +76,6 @@
     <string name="file_delete_failed">Failed to delete file "%s".</string>
     <string name="refreshing_files">Refreshing file list…</string>
 
-    <string name="file_icon_desc">File icon</string>
-    <string name="file_actions_menu_desc">File actions menu</string>
 
 <!--    just for accesses-->
 
@@ -103,9 +96,7 @@
     <string name="server_error_format">Error: %s</string>
     <string name="permission_request_title">Permission Request</string>
     <string name="permission_request_message">Allow access from %s?</string>
-    <string name="share_file_title">Share %s</string>
     <string name="share_file_error">Could not share file: %s</string>
-    <string name="cannot_read_file_share">Cannot read file to share.</string>
     <string name="no_readable_files_share">No readable files selected to share.</string>
     <string name="share_multiple_files_title">Share %d files</string>
     <string name="confirm_delete_multiple_title">Delete %d Files?</string>
@@ -115,7 +106,6 @@
     <string name="no_text_in_clipboard">No text in clipboard to paste</string>
     <string name="paste_from_clipboard">Paste from Clipboard</string>
 
-    <string name="pref_key_selected_folder_uri">selected_folder_uri</string>
     <string name="extra_folder_uri">FOLDER_URI</string>
 
 

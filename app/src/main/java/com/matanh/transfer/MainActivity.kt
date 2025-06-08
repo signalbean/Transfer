@@ -1,5 +1,6 @@
 package com.matanh.transfer
 
+import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ComponentName
@@ -9,10 +10,10 @@ import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
@@ -38,7 +39,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: MainViewModel
     private lateinit var tvServerStatus: TextView
     private lateinit var tvIpAddress: TextView
-    private lateinit var btnToggleServer: Button
     private lateinit var btnCopyIp: ImageButton
     private lateinit var rvFiles: RecyclerView
     private lateinit var fileAdapter: FileAdapter
@@ -70,16 +70,16 @@ class MainActivity : AppCompatActivity() {
     private val uploadFileLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { sourceUri ->
             if (currentSelectedFolderUri == null) {
-                Toast.makeText(this, "Shared folder not selected.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.shared_folder_not_selected), Toast.LENGTH_SHORT).show()
                 return@registerForActivityResult
             }
             val fileName = Utils.getFileName(this, sourceUri)
             val copiedFile = Utils.copyUriToAppDir(this, sourceUri, currentSelectedFolderUri!!, fileName)
             if (copiedFile != null && copiedFile.exists()) {
-                Toast.makeText(this, "File uploaded: ${copiedFile.name}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.file_uploaded, copiedFile.name), Toast.LENGTH_SHORT).show()
                 viewModel.loadFiles(currentSelectedFolderUri!!)
             } else {
-                Toast.makeText(this, "Failed to upload file", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.file_upload_failed), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -109,10 +109,10 @@ class MainActivity : AppCompatActivity() {
                 viewModel.loadFiles(currentSelectedFolderUri!!) // Load files for the selected folder
                 startFileServer(currentSelectedFolderUri!!)
             } else {
-                navigateToSettingsWithMessage("Error: Could not parse selected folder URI.")
+                navigateToSettingsWithMessage(getString(R.string.error_parsing_folder_uri))
             }
         } else {
-            navigateToSettingsWithMessage("Please select a shared folder in settings")
+            navigateToSettingsWithMessage(getString(R.string.select_shared_folder_prompt))
         }
 
         Intent(this, FileServerService::class.java).also { intent ->
@@ -130,7 +130,6 @@ class MainActivity : AppCompatActivity() {
     private fun initViews() {
         tvServerStatus = findViewById(R.id.tvServerStatus)
         tvIpAddress = findViewById(R.id.tvIpAddress)
-        btnToggleServer = findViewById(R.id.btnToggleServer)
         btnCopyIp = findViewById(R.id.btnCopyIp)
         rvFiles = findViewById(R.id.rvFiles)
         fabUpload = findViewById(R.id.fabUpload)
@@ -138,24 +137,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
-        btnToggleServer.setOnClickListener {
-            if (currentSelectedFolderUri == null) {
-                navigateToSettingsWithMessage("Please select a shared folder in settings before starting the server.")
-                return@setOnClickListener
-            }
-            if (fileServerService?.serverState?.value is ServerState.Running) {
-                stopFileServer()
-            } else {
-                startFileServer(currentSelectedFolderUri!!)
-            }
-        }
         btnCopyIp.setOnClickListener {
             val ipText = tvIpAddress.text.toString()
             if (ipText != getString(R.string.waiting_for_network) && ipText.isNotEmpty()) {
                 val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 val clip = ClipData.newPlainText("Server IP", ipText)
                 clipboard.setPrimaryClip(clip)
-                Toast.makeText(this, "IP copied to clipboard", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.ip_copied_to_clipboard, Toast.LENGTH_SHORT).show()
             }
         }
         fabUpload.setOnClickListener {
@@ -224,7 +212,8 @@ class MainActivity : AppCompatActivity() {
         override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
             val selectedFiles = fileAdapter.getSelectedFileItems()
             if (selectedFiles.isEmpty()){
-                Toast.makeText(this@MainActivity, "No files selected", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, getString(R.string.no_files_selected), Toast.LENGTH_SHORT).show()
+                // should not be possible
                 return false
             }
 
@@ -259,6 +248,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    @SuppressLint("SetTextI18n")
     private fun observeServerState() {
         if (!isServiceBound || fileServerService == null) return
         lifecycleScope.launch {
@@ -270,21 +260,18 @@ class MainActivity : AppCompatActivity() {
                             tvServerStatus.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.green))
                             viewStatusIndicator.background = ContextCompat.getDrawable(this@MainActivity, R.drawable.status_indicator_running)
                             tvIpAddress.text = "${state.ip}:${state.port}"
-                            btnToggleServer.text = getString(R.string.stop_server)
                         }
                         is ServerState.Stopped -> {
                             tvServerStatus.text = getString(R.string.server_stopped)
                             tvServerStatus.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.red))
                             viewStatusIndicator.background = ContextCompat.getDrawable(this@MainActivity, R.drawable.status_indicator_stopped)
                             tvIpAddress.text = getString(R.string.waiting_for_network)
-                            btnToggleServer.text = getString(R.string.start_server)
                         }
                         is ServerState.Error -> {
                             tvServerStatus.text = getString(R.string.server_error_format, state.message)
                             tvServerStatus.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.red))
                             viewStatusIndicator.background = ContextCompat.getDrawable(this@MainActivity, R.drawable.status_indicator_stopped) // create this
                             tvIpAddress.text = getString(R.string.waiting_for_network)
-                            btnToggleServer.text = getString(R.string.start_server)
                         }
                     }
                 }
@@ -328,7 +315,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun startFileServer(folderUri: Uri) {
         if (!Utils.canWriteToUri(this, folderUri)) {
-            Toast.makeText(this, "No write permission for the selected folder. Please re-select in settings.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.no_write_permission), Toast.LENGTH_LONG).show()
             startActivity(Intent(this, SettingsActivity::class.java)) // Guide user to fix
             return
         }
@@ -339,31 +326,6 @@ class MainActivity : AppCompatActivity() {
         ContextCompat.startForegroundService(this, serviceIntent)
     }
 
-    private fun stopFileServer() {
-        val serviceIntent = Intent(this, FileServerService::class.java).apply {
-            action = Constants.ACTION_STOP_SERVICE
-        }
-        ContextCompat.startForegroundService(this, serviceIntent)
-    }
-
-    // Updated to handle a single file, used by CAB or other actions
-    private fun shareFile(file: FileItem) {
-        val docFile = DocumentFile.fromSingleUri(this, file.uri)
-        if (docFile != null && docFile.canRead()) {
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = docFile.type ?: "*/*" // Determine MIME type
-                putExtra(Intent.EXTRA_STREAM, docFile.uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            try {
-                startActivity(Intent.createChooser(shareIntent, getString(R.string.share_file_title, docFile.name)))
-            } catch (e: Exception) {
-                Toast.makeText(this, getString(R.string.share_file_error, e.message), Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            Toast.makeText(this, getString(R.string.cannot_read_file_share), Toast.LENGTH_SHORT).show()
-        }
-    }
 
     private fun shareMultipleFiles(files: List<FileItem>) {
         if (files.isEmpty()) return
@@ -397,22 +359,6 @@ class MainActivity : AppCompatActivity() {
         actionMode?.finish()
     }
 
-
-    // Updated to handle a single file, used by CAB or other actions
-    private fun confirmDeleteFile(file: FileItem) {
-        val docFile = DocumentFile.fromSingleUri(this, file.uri)
-        if (docFile != null) {
-            MaterialAlertDialogBuilder(this)
-                .setTitle(getString(R.string.confirm_delete_file_title))
-                .setMessage(getString(R.string.confirm_delete_file_message, docFile.name))
-                .setNegativeButton(getString(R.string.cancel), null)
-                .setPositiveButton(getString(R.string.delete)) { _, _ ->
-                    deleteFileAndUpdateList(docFile)
-                }
-                .show()
-        }
-    }
-
     private fun confirmDeleteMultipleFiles(files: List<FileItem>) {
         if (files.isEmpty()) return
         MaterialAlertDialogBuilder(this)
@@ -436,17 +382,6 @@ class MainActivity : AppCompatActivity() {
                 actionMode?.finish()
             }
             .show()
-    }
-
-    private fun deleteFileAndUpdateList(docFile: DocumentFile) {
-        val fileName = docFile.name ?: "File"
-        if (docFile.delete()) {
-            Toast.makeText(this, getString(R.string.file_deleted_successfully, fileName), Toast.LENGTH_SHORT).show()
-            currentSelectedFolderUri?.let { viewModel.loadFiles(it) }
-        } else {
-            Toast.makeText(this, getString(R.string.file_delete_failed, fileName), Toast.LENGTH_SHORT).show()
-        }
-        actionMode?.finish()
     }
 
 
@@ -477,10 +412,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun uploadFile() {
-        if (currentSelectedFolderUri == null) {
-            navigateToSettingsWithMessage("Please select a shared folder in settings to upload files.")
-            return
-        }
         uploadFileLauncher.launch("*/*")
     }
 
@@ -519,7 +450,7 @@ class MainActivity : AppCompatActivity() {
             currentSelectedFolderUri = null
             viewModel.setSelectedFolderUri(null)
             fileAdapter.updateFiles(emptyList()) // Clear file list
-            navigateToSettingsWithMessage("No shared folder selected. Please choose one in settings.")
+            navigateToSettingsWithMessage(getString(R.string.select_shared_folder_prompt))
         } else if (newUri != null && fileAdapter.itemCount == 0) {
             // Potentially returning to an empty list, try loading again
             viewModel.loadFiles(newUri)
@@ -546,8 +477,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 unbindService(serviceConnection)
             } catch (e: IllegalArgumentException) {
-                // Handle case where service might have already been unbound or not registered.
-                // Log.e("MainActivity", "Service not registered or already unbound: ${e.message}")
+                 Log.e("MainActivity", "Service not registered or already unbound: ${e.message}")
             }
             isServiceBound = false
         }

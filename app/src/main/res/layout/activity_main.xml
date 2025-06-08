@@ -93,14 +93,6 @@ app:layout_constraintEnd_toEndOf="parent">
 
     </LinearLayout>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnToggleServer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="20dp" 
-    android:text="@string/start_server"
-    style="@style/Widget.MaterialComponents.Button"/>
 
 </LinearLayout>
 
