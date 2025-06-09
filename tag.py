@@ -4,6 +4,8 @@
 # Supports: manual version (vX.Y.Z), version bump (patch/minor/major)
 # Supports: optional --changelog/-m (stored in Fastlane format under fastlane/metadata/.../changelogs/<versionCode>.txt)
 
+# made by chatGPT
+
 import re
 import subprocess
 import sys
@@ -17,7 +19,11 @@ def fail(msg):
     print(f"Error: {msg}", file=sys.stderr)
     sys.exit(1)
 
-def run(cmd):
+def run(cmd, dry_run=False):
+    cmd_str = " ".join(cmd)
+    if dry_run:
+        print(f"[DRY RUN] Would execute: {cmd_str}")
+        return ""
     return subprocess.run(cmd, check=True, capture_output=True, text=True).stdout.strip()
 
 def has_uncommitted_changes():
@@ -67,7 +73,7 @@ def bump_version(tag: str, bump: str) -> str:
 
     return f"v{major}.{minor}.{patch}"
 
-def update_version_file(file_path, version_name, version_code):
+def update_version_file(file_path, version_name, version_code, dry_run=False):
     text = file_path.read_text()
 
     new_text, cnt_code = re.subn(
@@ -83,28 +89,40 @@ def update_version_file(file_path, version_name, version_code):
 
     if cnt_code == 0 or cnt_name == 0:
         fail("Failed to update versionCode or versionName in " + str(file_path))
-    file_path.write_text(new_text)
 
-def write_fastlane_changelog(version_code: int, changelog: str):
+    if dry_run:
+        print(f"[DRY RUN] Would update {file_path} with:")
+        print(f"  versionCode = {version_code}")
+        print(f"  versionName = \"{version_name}\"")
+    else:
+        file_path.write_text(new_text)
+
+def write_fastlane_changelog(version_code: int, changelog: str, dry_run=False):
     encoded = changelog.encode("ascii")
 
     if len(encoded) > MAX_CHANGELOG_SIZE:
         fail(f"Changelog too long: {len(encoded)} bytes (max is {MAX_CHANGELOG_SIZE})")
 
     changelog_dir = FASTLANE_CHANGELOG_PATH
-    changelog_dir.mkdir(parents=True, exist_ok=True)
-
     changelog_file = changelog_dir / f"{version_code}.txt"
-    changelog_file.write_text(changelog.strip() + "\n")
-    run(["git", "add", str(changelog_file)])
+
+    if dry_run:
+        print(f"[DRY RUN] Would write changelog to {changelog_file}:")
+        print(changelog.strip())
+        print(f"[DRY RUN] Would execute: git add {changelog_file}")
+    else:
+        changelog_dir.mkdir(parents=True, exist_ok=True)
+        changelog_file.write_text(changelog.strip() + "\n")
+        run(["git", "add", str(changelog_file)])
 
 def main():
     parser = argparse.ArgumentParser(description="Tag version and update build.gradle & Fastlane changelog.")
     parser.add_argument("version_or_bump", nargs="?", help="vX.Y.Z or bump type: patch | minor | major")
     parser.add_argument("-m", "--changelog", help="Plain ASCII changelog (max 500 bytes) for Fastlane")
+    parser.add_argument("-d", "--dry-run", action="store_true", help="Dry run mode, no changes made")
+    parser.add_argument("-U", "--allow-uncommitted", action="store_true", help="Allow uncommitted changes")
 
     args = parser.parse_args()
-
 
     gradle_file = find_build_gradle()
 
@@ -113,13 +131,12 @@ def main():
         print(f"Current versionName: {version_name}")
         print(f"Current versionCode: {version_code}")
         print(f"Latest Git tag: {get_latest_git_tag()}")
-    if has_uncommitted_changes():
-        print("+ Uncommitted changes present.")
+        if has_uncommitted_changes():
+            print("+ Uncommitted changes present.")
+        sys.exit(0)
 
-    sys.exit(0)
-
-    if has_uncommitted_changes():
-        fail("Uncommitted changes present. Please commit or stash before tagging.")
+    if not args.allow_uncommitted and has_uncommitted_changes():
+        fail("Uncommitted changes present. Please commit or stash before tagging, or use -U/--allow-uncommitted.")
 
     if args.version_or_bump in ["patch", "minor", "major"]:
         current_tag = get_latest_git_tag()
@@ -134,27 +151,27 @@ def main():
     version_code = major * 10000 + minor * 100 + patch
 
     # Warn if changelog missing
-    if not args.changelog:
+    if not args.changelog and not args.dry_run:
         confirm = input("No changelog provided. Continue without changelog? [y/N] ").strip().lower()
         if confirm != "y":
             print("Aborting.")
             sys.exit(1)
 
     print(f"Updating to versionName: {version_name}, versionCode: {version_code}")
-    update_version_file(gradle_file, version_name, version_code)
+    update_version_file(gradle_file, version_name, version_code, args.dry_run)
 
-    run(["git", "add", str(gradle_file)])
-    run(["git", "commit", "-m", version])
+    run(["git", "add", str(gradle_file)], dry_run=args.dry_run)
+    run(["git", "commit", "-m", version], dry_run=args.dry_run)
 
     if args.changelog:
-        write_fastlane_changelog(version_code, args.changelog)
-        run(["git", "commit", "--amend", "--no-edit"])
+        write_fastlane_changelog(version_code, args.changelog, args.dry_run)
+        run(["git", "commit", "--amend", "--no-edit"], dry_run=args.dry_run)
 
-    run(["git", "tag", version])
-    run(["git", "push"])
-    run(["git", "push", "origin", version])
+    run(["git", "tag", version], dry_run=args.dry_run)
+    run(["git", "push"], dry_run=args.dry_run)
+    run(["git", "push", "origin", version], dry_run=args.dry_run)
 
-    print(f"Tagged and pushed {version} successfully.")
+    print(f"[{'DRY RUN' if args.dry_run else 'SUCCESS'}] Tagged and pushed {version} successfully.")
 
 if __name__ == "__main__":
     main()
