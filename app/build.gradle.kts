@@ -28,6 +28,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true // make it possible to import BuildConfig for VERSION_NAME
     }
 
     signingConfigs {

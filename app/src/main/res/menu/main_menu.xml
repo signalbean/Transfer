@@ -11,6 +11,10 @@
         android:id="@+id/action_settings"
         android:title="@string/settings"
         android:icon="@drawable/ic_settings"
-        app:iconTint="@color/toolbar_icon_tint_light" 
-    app:showAsAction="never" />
+        app:iconTint="@color/toolbar_icon_tint_light"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_about"
+        android:title="@string/about"
+        app:showAsAction="never" />
 </menu>

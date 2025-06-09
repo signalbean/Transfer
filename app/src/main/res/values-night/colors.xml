@@ -9,8 +9,11 @@
     <color name="text_color_secondary_dark">#BDBDBD</color>
     <color name="icon_tint_color_dark">#FFFFFF</color>
     <color name="toolbar_icon_tint_dark">#FFFFFF</color>
+
+    <color name="blue">#90CAF9</color>
     <color name="green">#66BB6A</color>
     <color name="red">#EF5350</color>
+
     <color name="file_item_selected_background">#4A4A4A</color>
     <color name="default_file_item_background">@android:color/transparent</color>
     <color name="light_gray">@color/app_background_color</color>
