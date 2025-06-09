@@ -23,6 +23,8 @@ import io.ktor.server.routing.*
 import io.ktor.util.*
 import io.ktor.util.pipeline.PipelineContext
 import io.ktor.utils.io.jvm.javaio.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.json.JSONObject
 import java.io.InputStream
@@ -75,53 +77,76 @@ suspend fun PipelineContext<Unit, ApplicationCall>.handleFileDownload(
     baseDocumentFile: DocumentFile,
     fileNameEncoded: String
 ) {
+    // 1) URL Decode filename
     val fileName = try {
         URLDecoder.decode(fileNameEncoded, "UTF-8")
     } catch (e: Exception) {
-        call.respond(HttpStatusCode.BadRequest, "Invalid file name encoding.")
-        return
+        return call.respond(HttpStatusCode.BadRequest, "Invalid file name encoding.")
     }
-    val targetFile = baseDocumentFile.findFile(fileName)
-    if (targetFile == null || !targetFile.isFile || !targetFile.canRead()) {
-        call.respond(HttpStatusCode.NotFound, "File not found: $fileName")
-        return
+    // 2) Locate & validate
+    val target = baseDocumentFile.findFile(fileName)
+    if (target == null || !target.isFile || !target.canRead()) {
+        return call.respond(HttpStatusCode.NotFound, "File not found: $fileName")
     }
+    // 3) Determine mime & optional length
+    val mime = ContentType.parse(target.type ?: ContentType.Application.OctetStream.toString())
+    val length = target.length().takeIf { it > 0L }
+    // 4) Set headers *before* streaming
+    call.response.header(
+        HttpHeaders.ContentDisposition,
+        ContentDisposition.Attachment
+            .withParameter(ContentDisposition.Parameters.FileName, fileName)
+            .toString()
+    )
+    length?.let {
+        call.response.header(HttpHeaders.ContentLength, it.toString())
+    }
+
+    // 5. Open the Android stream once
+    val inputStream = context.contentResolver.openInputStream(target.uri)
+        ?: return call.respond(HttpStatusCode.InternalServerError, "Could not open file stream.")
+
+    // 6. Stream it out with a big buffer and proper context switching
     try {
-        val mimeType = targetFile.type ?: ContentType.Application.OctetStream.toString()
-        call.response.header(
-            HttpHeaders.ContentDisposition,
-            ContentDisposition.Attachment.withParameter(
-                ContentDisposition.Parameters.FileName,
-                targetFile.name ?: "downloaded_file"
-            ).toString()
-        )
-        context.contentResolver.openInputStream(targetFile.uri)?.use { inputStream ->
-            call.respondOutputStream(ContentType.parse(mimeType), HttpStatusCode.OK) {
-                inputStream.copyTo(this)
+        call.respondOutputStream(mime, HttpStatusCode.OK) {
+            withContext(Dispatchers.IO) {
+                val buf = ByteArray(64 * 1024)
+                while (true) {
+                    val read = inputStream.read(buf)
+                    if (read < 0) break
+                    write(buf, 0, read)  // 'this' is the OutputStream
+                }
+                // flush any remaining bytes
+                flush()
             }
-        } ?: run {
-            call.respond(HttpStatusCode.InternalServerError, "Could not open file stream.")
         }
     } catch (e: Exception) {
-        Log.e(TAG_KTOR_MODULE, "Error serving file $fileName", e)
+        Log.e(TAG_KTOR_MODULE, "Error streaming file $fileName", e)
         call.respond(HttpStatusCode.InternalServerError, "Error serving file: ${e.localizedMessage}")
+    } finally {
+        inputStream.close()
     }
 }
 
+
 suspend fun PipelineContext<Unit, ApplicationCall>.handleFileUpload(
     context: Context,
-    baseDocumentFile: DocumentFile?,
+    baseDocumentFile: DocumentFile,
     originalFileName: String,
     mimeType: String?,
     inputStreamProvider: suspend () -> InputStream,
     notifyService: () -> Unit
 ): Pair<String?, String?> {
-    if (baseDocumentFile == null || !baseDocumentFile.canWrite()) {
-        call.respond(HttpStatusCode.InternalServerError, "Storage not writable.")
-        return null to "Storage not writable."
-    }
-    // Sanitize and ensure unique filename
-    val sanitizedFileName = originalFileName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+
+    // 1. Sanitize and ensure unique filename
+    val sanitizedFileName = originalFileName.replace(Regex("""(^\\s+|\\s+\$|^\\.\\.|[\\/])"""), "_")
+    /*
+    ^\s+ - Leading whitespace
+    \s+$ - Trailing whitespace
+    ^\.\. - ".." at start
+    [\\/] - Path separators
+     */
+
     var targetFileDoc = baseDocumentFile.findFile(sanitizedFileName)
     var counter = 1
     var uniqueFileName = sanitizedFileName
@@ -132,12 +157,15 @@ suspend fun PipelineContext<Unit, ApplicationCall>.handleFileUpload(
         targetFileDoc = baseDocumentFile.findFile(uniqueFileName)
         counter++
     }
+
+    // 3. Determine effective MIME type and create the target file
     val effectiveMimeType = mimeType ?: ContentType.Application.OctetStream.toString()
     val newFileDoc = baseDocumentFile.createFile(effectiveMimeType, uniqueFileName)
     if (newFileDoc == null || !newFileDoc.canWrite()) {
         Log.e(TAG_KTOR_MODULE, "Failed to create document file for upload: $uniqueFileName")
         return null to "Failed to create file."
     }
+    // 5) Stream upload with a buffer
     try {
         inputStreamProvider().use { inputStream ->
             context.contentResolver.openOutputStream(newFileDoc.uri)?.use { outputStream ->
@@ -155,13 +183,11 @@ suspend fun PipelineContext<Unit, ApplicationCall>.handleFileUpload(
 }
 
 fun PipelineContext<Unit, ApplicationCall>.handleFileDelete(
-    baseDocumentFile: DocumentFile?,
+    baseDocumentFile: DocumentFile,
     fileName: String,
     notifyService: () -> Unit
 ): Pair<Boolean, String?> {
-    if (baseDocumentFile == null) {
-        return false to "Base directory not configured."
-    }
+
     val decodedFileName = try {
         URLDecoder.decode(fileName, "UTF-8")
     } catch (e: Exception) {
