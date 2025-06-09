@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 
-# made by chatgpt
-
-# Updates versionCode and versionName in build.gradle, commits, tags, and pushes
-
+# Updates versionCode and versionName in build.gradle(.kts), commits, tags, and pushes
+# Supports: manual version (vX.Y.Z), version bump (patch/minor/major)
+# Supports: optional --changelog/-m (stored in Fastlane format under fastlane/metadata/.../changelogs/<versionCode>.txt)
 
 import re
 import subprocess
 import sys
+import argparse
 from pathlib import Path
+
+MAX_CHANGELOG_SIZE = 500
+FASTLANE_CHANGELOG_PATH = Path("fastlane/metadata/android/en-US/changelogs")
 
 def fail(msg):
     print(f"Error: {msg}", file=sys.stderr)
@@ -17,13 +20,16 @@ def fail(msg):
 def run(cmd):
     return subprocess.run(cmd, check=True, capture_output=True, text=True).stdout.strip()
 
+def has_uncommitted_changes():
+    result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
+    return bool(result.stdout.strip())
+
 def find_build_gradle():
     for pattern in ["app/build.gradle", "app/build.gradle.kts"]:
         path = Path(pattern)
         if path.exists():
             return path
     fail("Could not find app/build.gradle or app/build.gradle.kts")
-
 
 def get_current_version(file_path):
     content = file_path.read_text()
@@ -39,15 +45,29 @@ def get_latest_git_tag():
     try:
         return run(["git", "describe", "--tags", "--abbrev=0"])
     except subprocess.CalledProcessError:
-        return "(no tags)"
+        return "v0.0.0"
+
+def bump_version(tag: str, bump: str) -> str:
+    if not re.match(r"^v\d+\.\d+\.\d+$", tag):
+        fail(f"Invalid tag format: {tag}")
+
+    major, minor, patch = map(int, tag[1:].split("."))
+
+    if bump == "major":
+        major += 1
+        minor = 0
+        patch = 0
+    elif bump == "minor":
+        minor += 1
+        patch = 0
+    elif bump == "patch":
+        patch += 1
+    else:
+        fail(f"Invalid bump type: {bump}")
+
+    return f"v{major}.{minor}.{patch}"
 
 def update_version_file(file_path, version_name, version_code):
-    """
-    Replace:
-        versionCode = <digits>
-        versionName = "<something>"
-    with new values. Uses regex to match possible whitespace around `=`.
-    """
     text = file_path.read_text()
 
     new_text, cnt_code = re.subn(
@@ -65,35 +85,71 @@ def update_version_file(file_path, version_name, version_code):
         fail("Failed to update versionCode or versionName in " + str(file_path))
     file_path.write_text(new_text)
 
+def write_fastlane_changelog(version_code: int, changelog: str):
+    encoded = changelog.encode("ascii")
+
+    if len(encoded) > MAX_CHANGELOG_SIZE:
+        fail(f"Changelog too long: {len(encoded)} bytes (max is {MAX_CHANGELOG_SIZE})")
+
+    changelog_dir = FASTLANE_CHANGELOG_PATH
+    changelog_dir.mkdir(parents=True, exist_ok=True)
+
+    changelog_file = changelog_dir / f"{version_code}.txt"
+    changelog_file.write_text(changelog.strip() + "\n")
+    run(["git", "add", str(changelog_file)])
+
 def main():
+    parser = argparse.ArgumentParser(description="Tag version and update build.gradle & Fastlane changelog.")
+    parser.add_argument("version_or_bump", nargs="?", help="vX.Y.Z or bump type: patch | minor | major")
+    parser.add_argument("-m", "--changelog", help="Plain ASCII changelog (max 500 bytes) for Fastlane")
+
+    args = parser.parse_args()
+
+
     gradle_file = find_build_gradle()
 
-    if len(sys.argv) == 1:
+    if not args.version_or_bump:
         version_name, version_code = get_current_version(gradle_file)
         print(f"Current versionName: {version_name}")
         print(f"Current versionCode: {version_code}")
         print(f"Latest Git tag: {get_latest_git_tag()}")
+    if has_uncommitted_changes():
+        print("+ Uncommitted changes present.")
+
         sys.exit(0)
 
-    if len(sys.argv) != 2:
-        fail("Usage: ./tag vX.Y.Z")
+    if has_uncommitted_changes():
+        fail("Uncommitted changes present. Please commit or stash before tagging.")
 
-    version = sys.argv[1]
+    if args.version_or_bump in ["patch", "minor", "major"]:
+        current_tag = get_latest_git_tag()
+        version = bump_version(current_tag, args.version_or_bump)
+    else:
+        version = args.version_or_bump
+        if not re.match(r"^v\d+\.\d+\.\d+$", version):
+            fail("Version must follow semantic versioning, e.g., v1.2.3")
 
-    if not re.match(r"^v\d+\.\d+\.\d+$", version):
-        fail("Version must follow semantic versioning, e.g., v1.2.3")
-
-    version_name = version[1:]  # strip 'v'
+    version_name = version[1:]
     major, minor, patch = map(int, version_name.split("."))
     version_code = major * 10000 + minor * 100 + patch
 
-    print(f"Updating to versionName: {version_name}, versionCode: {version_code}")
+    # Warn if changelog missing
+    if not args.changelog:
+        confirm = input("No changelog provided. Continue without changelog? [y/N] ").strip().lower()
+        if confirm != "y":
+            print("Aborting.")
+            sys.exit(1)
 
-    print(f"Updating {gradle_file}")
+    print(f"Updating to versionName: {version_name}, versionCode: {version_code}")
     update_version_file(gradle_file, version_name, version_code)
 
     run(["git", "add", str(gradle_file)])
     run(["git", "commit", "-m", version])
+
+    if args.changelog:
+        write_fastlane_changelog(version_code, args.changelog)
+        run(["git", "commit", "--amend", "--no-edit"])
+
     run(["git", "tag", version])
     run(["git", "push"])
     run(["git", "push", "origin", version])
