@@ -429,6 +429,7 @@ fun Application.transferServerModule(
                         }
 
                         if (filesUploadedCount > 0) {
+                            fileServerService.notifyFilePushed()
                             call.respondText(
                                 "Successfully uploaded: ${
                                     uploadedFileNames.joinToString(
@@ -488,6 +489,7 @@ fun Application.transferServerModule(
                                 TAG_KTOR_MODULE,
                                 "File deleted successfully via API: $decodedFileName"
                             )
+                            fileServerService.notifyFilePushed()
                             call.respond(
                                 HttpStatusCode.OK,
                                 SuccessResponse("File '$decodedFileName' deleted.")
@@ -546,6 +548,7 @@ fun Application.transferServerModule(
                             if (outputStream == null) throw Exception("Cannot open output stream")
                             receivedChannel.copyTo(outputStream)
                         }
+                    fileServerService.notifyFilePushed()
                     call.respond(HttpStatusCode.Created, "File '$fileName' uploaded via PUT.")
                 } catch (e: Exception) {
                     targetFileDoc.delete() // Clean up
@@ -572,6 +575,7 @@ fun Application.transferServerModule(
                 }
                 if (fileToDeleteDoc.delete()) {
                     call.respondText("File '$fileName' deleted.", status = HttpStatusCode.OK)
+                    fileServerService.notifyFilePushed()
                 } else {
                     call.respondText("Error: Could not delete file '$fileName'.", status = HttpStatusCode.InternalServerError)
                 }

@@ -59,6 +59,7 @@ class MainActivity : AppCompatActivity() {
             isServiceBound = true
             observeServerState()
             observeIpPermissionRequests()
+            observePullRefresh()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -308,6 +309,16 @@ class MainActivity : AppCompatActivity() {
 
                     ipPermissionDialogs[ip] = dialog
                     dialog.show()
+                }
+            }
+        }
+    }
+    private fun observePullRefresh(){
+        if (!isServiceBound || fileServerService == null) return
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                fileServerService!!.pullRefresh.collect {
+                    viewModel.loadFiles(currentSelectedFolderUri!!)
                 }
             }
         }

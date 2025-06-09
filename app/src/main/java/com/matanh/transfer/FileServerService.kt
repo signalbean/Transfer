@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,6 +52,10 @@ class FileServerService : Service() {
 
     val ipPermissionRequests = _ipPermissionRequests.asSharedFlow()
 
+    private val _pullRefresh = MutableSharedFlow<Unit>(replay = 0)
+    val pullRefresh: SharedFlow<Unit> = _pullRefresh.asSharedFlow()
+
+
     private lateinit var sharedPreferences: SharedPreferences
     private val approvedIps = mutableMapOf<String, Long>() // IP to expiry timestamp
 
@@ -68,6 +73,13 @@ class FileServerService : Service() {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         createNotificationChannel()
         Log.d(TAG, "FileServerService onCreate")
+    }
+
+    // Called from the server to create a “refresh” event
+    fun notifyFilePushed() {
+        CoroutineScope(Dispatchers.Default).launch {
+            _pullRefresh.emit(Unit)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
