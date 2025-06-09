@@ -116,7 +116,7 @@ def main():
     if has_uncommitted_changes():
         print("+ Uncommitted changes present.")
 
-        sys.exit(0)
+    sys.exit(0)
 
     if has_uncommitted_changes():
         fail("Uncommitted changes present. Please commit or stash before tagging.")
