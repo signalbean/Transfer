@@ -88,7 +88,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-//        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -119,6 +118,8 @@ class MainActivity : AppCompatActivity() {
         Intent(this, FileServerService::class.java).also { intent ->
             bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         }
+        handleShareIntent(intent)
+
     }
     private fun navigateToSettingsWithMessage(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
@@ -126,6 +127,11 @@ class MainActivity : AppCompatActivity() {
         // Optionally finish MainActivity if a folder is mandatory to proceed
         // finish()
     }
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        handleShareIntent(intent)
+    }
+
 
 
     private fun initViews() {
@@ -247,6 +253,78 @@ class MainActivity : AppCompatActivity() {
             fabUpload.show() // Show FAB again
         }
     }
+    // handle share
+    private fun handleShareIntent(intent: Intent?) {
+        when (intent?.action) {
+            Intent.ACTION_SEND -> {
+                if (intent.type?.startsWith("text/plain") == true) {
+                    handleSharedText(intent)
+                } else {
+                    handleSharedFile(intent)
+                }
+            }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                handleMultipleFiles(intent)
+            }
+        }
+    }
+    private fun handleSharedText(intent: Intent) {
+        val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+        if (sharedText.isNullOrEmpty() || currentSelectedFolderUri == null) return
+
+        val fileName = "share_${System.currentTimeMillis()}.txt"
+        val file = Utils.createTextFileInDir(this, currentSelectedFolderUri!!, fileName, sharedText)
+
+        if (file != null && file.exists()) {
+            Toast.makeText(this, getString(R.string.shared_text_saved, fileName), Toast.LENGTH_SHORT).show()
+            viewModel.loadFiles(currentSelectedFolderUri!!)
+        } else {
+            Toast.makeText(this, R.string.error_saving_shared_content, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun handleSharedFile(intent: Intent) {
+        val fileUri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM) ?: return
+        if (currentSelectedFolderUri == null) return
+
+        val fileName = Utils.getFileName(this, fileUri) ?: "file_${System.currentTimeMillis()}"
+        val copiedFile = Utils.copyUriToAppDir(this, fileUri, currentSelectedFolderUri!!, fileName)
+
+        if (copiedFile != null && copiedFile.exists()) {
+            Toast.makeText(this, getString(R.string.shared_file_saved, fileName), Toast.LENGTH_SHORT).show()
+            viewModel.loadFiles(currentSelectedFolderUri!!)
+        } else {
+            Toast.makeText(this, R.string.error_saving_shared_content, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun handleMultipleFiles(intent: Intent) {
+        val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM) ?: return
+        if (currentSelectedFolderUri == null) return
+
+        var successCount = 0
+        for (uri in uris) {
+            val fileName = Utils.getFileName(this, uri) ?: "file_${System.currentTimeMillis()}"
+            if (Utils.copyUriToAppDir(this, uri, currentSelectedFolderUri!!, fileName) != null) {
+                successCount++
+            }
+        }
+
+        if (successCount > 0) {
+            Toast.makeText(
+                this,
+                getString(
+                    R.string.files_uploaded,
+                    successCount
+                ),
+                Toast.LENGTH_SHORT
+            ).show()
+            viewModel.loadFiles(currentSelectedFolderUri!!)
+        } else {
+            Toast.makeText(this, R.string.error_saving_shared_content, Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
 
     @SuppressLint("SetTextI18n")
