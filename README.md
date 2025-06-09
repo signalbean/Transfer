@@ -29,6 +29,17 @@ Imagine you need to transfer a file between your laptop and desktop — but you 
     * **Upload**: Easily select files from your phone’s storage to add them to the shared folder.
     * **Paste**: Paste text from your phone’s clipboard directly into a new `.txt` file in the shared folder with a single tap.
 
+## How to get the app
+Recommended way:
+from [IzzyOnDroid](https://apt.izzysoft.de/fdroid/index/apk/com.matanh.transfer) (use an F-Droid client like Neo Store, Droid-ify, or add IzzyOnDroid repo.)
+
+  <a href="https://apt.izzysoft.de/fdroid/index/apk/app.upryzing.clerotri">
+    <img alt="Get it on IzzyOnDroid" src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroidButtonGreyBorder_nofont.png" height="54">
+  </a>
+
+Directly from [github releases](https://github.com/matan-h/Transfer/releases) (You can also point Obtainium to this link.)
+
+
 ## Getting Started
 
 1. Install and open Transfer on your Android device.
