@@ -19,6 +19,7 @@ import androidx.preference.PreferenceManager
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.engine.EmbeddedServer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -30,7 +31,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 data class IpPermissionRequest(val ipAddress: String, val deferred: CompletableDeferred<Boolean>)
@@ -38,7 +38,7 @@ data class IpPermissionRequest(val ipAddress: String, val deferred: CompletableD
 class FileServerService : Service() {
 
     private val binder = LocalBinder()
-    private var ktorServer: ApplicationEngine? = null
+    private var ktorServer: EmbeddedServer<*, *>? = null
     private val serviceJob = SupervisorJob() // Use SupervisorJob for resilience
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
@@ -105,7 +105,7 @@ class FileServerService : Service() {
     }
 
     private fun startKtorServer() {
-        if (ktorServer?.application?.isActive == true) {
+        if (ktorServer != null) { // Changed from ktorServer?.application?.isActive to ktorServer?.isActive
             Log.d(TAG, "Ktor server already running.")
             // Update state if IP changed, etc. For now, assume it's okay or re-fetch IP.
             (_serverState.value as? ServerState.Running)?.let {
@@ -144,11 +144,16 @@ class FileServerService : Service() {
                 // Pass `this` (FileServerService instance) to the Ktor module for callbacks
                 val serviceProvider = { this@FileServerService }
 
-                ktorServer = embeddedServer(CIO, port = Constants.SERVER_PORT, host = "0.0.0.0", module = {
-                    transferServerModule(applicationContext,serviceProvider, currentSharedFolderUri!!)
-                }).apply {
-                    start(wait = false) // Start non-blocking
-                }
+                ktorServer =
+                    embeddedServer(CIO, port = Constants.SERVER_PORT, host = "0.0.0.0", module = {
+                        transferServerModule(
+                            applicationContext,
+                            serviceProvider,
+                            currentSharedFolderUri!!
+                        )
+                    }).apply {
+                        start(wait = false) // Start non-blocking
+                    }
 
                 _serverState.value = ServerState.Running(ipAddress, Constants.SERVER_PORT)
                 Log.i(TAG, "Ktor Server started on $ipAddress:${Constants.SERVER_PORT}")

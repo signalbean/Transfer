@@ -7,12 +7,11 @@ import androidx.documentfile.provider.DocumentFile
 import io.ktor.http.*
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
-import io.ktor.http.content.streamProvider
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.http.content.*
-import io.ktor.server.plugins.callloging.*
+import io.ktor.server.plugins.calllogging.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.origin
@@ -21,15 +20,15 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.*
-import io.ktor.util.pipeline.PipelineContext
-import io.ktor.utils.io.jvm.javaio.*
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.copyTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.json.JSONObject
-import java.io.InputStream
 import java.net.URLDecoder
 import java.net.URLEncoder
+import java.nio.channels.Channels
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -72,7 +71,8 @@ val IpAddressApprovalPlugin = createApplicationPlugin(name = "IpAddressApprovalP
 private val KEY_SERVICE_PROVIDER = AttributeKey<() -> FileServerService?>("ServiceProviderKey")
 
 // --- Shared File Handling Functions ---
-suspend fun PipelineContext<Unit, ApplicationCall>.handleFileDownload(
+suspend fun handleFileDownload(
+    call: RoutingCall,
     context: Context,
     baseDocumentFile: DocumentFile,
     fileNameEncoded: String
@@ -129,12 +129,12 @@ suspend fun PipelineContext<Unit, ApplicationCall>.handleFileDownload(
 }
 
 
-suspend fun PipelineContext<Unit, ApplicationCall>.handleFileUpload(
+suspend fun handleFileUpload(
     context: Context,
     baseDocumentFile: DocumentFile,
     originalFileName: String,
     mimeType: String?,
-    inputStreamProvider: suspend () -> InputStream,
+    byteReadChannelProvider: suspend () -> ByteReadChannel,
     notifyService: () -> Unit
 ): Pair<String?, String?> {
 
@@ -167,11 +167,13 @@ suspend fun PipelineContext<Unit, ApplicationCall>.handleFileUpload(
     }
     // 5) Stream upload with a buffer
     try {
-        inputStreamProvider().use { inputStream ->
-            context.contentResolver.openOutputStream(newFileDoc.uri)?.use { outputStream ->
-                inputStream.copyTo(outputStream)
-            } ?: throw Exception("Cannot open output stream for ${newFileDoc.uri}")
-        }
+        val byteReadChannel = byteReadChannelProvider()
+
+        context.contentResolver.openOutputStream(newFileDoc.uri)?.use { outputStream ->
+            val channel = Channels.newChannel(outputStream)
+            byteReadChannel.copyTo(channel)
+        } ?: throw Exception("Cannot open output stream for ${newFileDoc.uri}")
+
         Log.i(TAG_KTOR_MODULE, "File '$uniqueFileName' uploaded successfully.")
         notifyService()
         return uniqueFileName to null
@@ -182,7 +184,7 @@ suspend fun PipelineContext<Unit, ApplicationCall>.handleFileUpload(
     }
 }
 
-fun PipelineContext<Unit, ApplicationCall>.handleFileDelete(
+fun handleFileDelete(
     baseDocumentFile: DocumentFile,
     fileName: String,
     notifyService: () -> Unit
@@ -332,7 +334,7 @@ fun Application.transferServerModule(
                         call.respond(HttpStatusCode.BadRequest, "File name missing.")
                         return@get
                     }
-                    handleFileDownload(applicationContext, baseDocumentFile, fileNameEncoded)
+                    handleFileDownload(call, applicationContext, baseDocumentFile, fileNameEncoded)
                 }
 
                 post("/upload") {
@@ -350,7 +352,7 @@ fun Application.transferServerModule(
                                         baseDocumentFile = baseDocumentFile,
                                         originalFileName = originalFileName,
                                         mimeType = part.contentType?.toString(),
-                                        inputStreamProvider = { part.streamProvider() },
+                                        byteReadChannelProvider = { part.provider() },
                                         notifyService = { fileServerService.notifyFilePushed() }
                                     )
                                     if (fileName != null) {
@@ -415,7 +417,7 @@ fun Application.transferServerModule(
                     baseDocumentFile = baseDocumentFile,
                     originalFileName = fileName,
                     mimeType = ContentType.Application.OctetStream.toString(),
-                    inputStreamProvider = { call.receiveChannel().toInputStream() },
+                    byteReadChannelProvider = { call.receiveChannel() },
                     notifyService = { fileServerService.notifyFilePushed() }
                 )
                 if (uploadedFileName != null) {
@@ -430,7 +432,7 @@ fun Application.transferServerModule(
                     call.respond(HttpStatusCode.BadRequest, "Filename missing in path.")
                     return@get
                 }
-                handleFileDownload(applicationContext, baseDocumentFile, fileNameEncoded)
+                handleFileDownload(call, applicationContext, baseDocumentFile, fileNameEncoded)
             }
 
             delete("/{fileName}") {
