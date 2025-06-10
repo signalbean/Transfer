@@ -11,10 +11,6 @@
         <item name="toolbarStyle">@style/Widget.App.Toolbar</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">false</item> </style>
 
-    <style name="Widget.App.Toolbar" parent="Widget.AppCompat.Toolbar">
-        <item name="android:background">?attr/colorPrimary</item>
-        <item name="titleTextColor">@color/white</item> <item name="popupTheme">@style/AppTheme.PopupOverlay</item>
-        <item name="android:theme">@style/ThemeOverlay.AppCompat.Dark.ActionBar</item> </style>
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
@@ -25,4 +21,16 @@
     <style name="CustomActionModeTitleTextStyle" parent="@style/TextAppearance.AppCompat.Widget.ActionMode.Title">
         <item name="android:textColor">@color/white</item>
     </style>
+
+    <!-- menu background -->
+    <style name="Widget.TransferApp.ActionMode" parent="Widget.AppCompat.ActionMode">
+        <item name="background">@drawable/gradient_header</item>
+    </style>
+
+    <style name="Widget.App.Toolbar" parent="Widget.AppCompat.Toolbar">
+        <item name="android:background">@drawable/gradient_header</item>
+        <item name="titleTextColor">@color/white</item> <item name="popupTheme">@style/AppTheme.PopupOverlay</item>
+        <item name="android:theme">@style/ThemeOverlay.AppCompat.Dark.ActionBar</item>
+    </style>
+
 </resources>

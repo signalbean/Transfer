@@ -16,9 +16,9 @@ android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"> <androidx.appcompa
     android:id="@+id/toolbar"
     android:layout_width="match_parent"
     android:layout_height="?attr/actionBarSize"
-    android:background="?attr/colorPrimary"
     app:popupTheme="@style/AppTheme.PopupOverlay"
-    app:titleTextColor="@color/white"/> </com.google.android.material.appbar.AppBarLayout>
+    app:titleTextColor="@color/white"/>
+</com.google.android.material.appbar.AppBarLayout>
 
 <androidx.constraintlayout.widget.ConstraintLayout
 android:layout_width="match_parent"
@@ -89,7 +89,7 @@ app:layout_constraintEnd_toEndOf="parent">
         android:src="@drawable/ic_copy"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/copy_ip_description"
-        app:tint="?attr/colorPrimary"/> 
+        app:tint="@color/colorPrimary"/>
 
     </LinearLayout>
 
