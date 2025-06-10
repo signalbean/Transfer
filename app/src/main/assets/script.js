@@ -4,6 +4,91 @@ document.addEventListener('DOMContentLoaded', () => {
     const filesTableBody = document.querySelector('#files-table tbody');
     const uploadProgressContainer = document.getElementById('upload-progress-container');
     const noFilesMessage = document.getElementById('no-files-message');
+    const themeToggleButton = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+
+    // Modal elements
+    const confirmationModalOverlay = document.getElementById('confirmation-modal-overlay');
+    const confirmationModalMessage = document.getElementById('confirmation-modal-message');
+    const modalConfirmButton = document.getElementById('modal-confirm-button');
+    const modalCancelButton = document.getElementById('modal-cancel-button');
+
+    // --- Theme Toggle ---
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeIcon.textContent = '☀️'; // Sun icon for dark mode (to switch to light)
+        } else {
+            document.body.classList.remove('dark-mode');
+            themeIcon.textContent = '🌙'; // Moon icon for light mode (to switch to dark)
+        }
+    }
+
+    // Load theme preference from localStorage
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        applyTheme(savedTheme);
+    } else {
+        // Default to light mode if no preference saved
+        applyTheme('light');
+    }
+
+    // Toggle theme on button click
+    themeToggleButton.addEventListener('click', () => {
+        const currentTheme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+    });
+
+    // --- Custom Confirmation Modal Logic ---
+    let currentConfirmCallback = null;
+
+    /**
+     * Shows a custom confirmation modal.
+     * @param {string} message The message to display in the modal.
+     * @param {function} onConfirm Callback function to execute if the user confirms.
+     */
+    function showConfirmModal(message, onConfirm) {
+        confirmationModalMessage.textContent = message;
+        currentConfirmCallback = onConfirm; // Store the callback
+
+        confirmationModalOverlay.classList.add('active'); // Show modal
+
+        // Ensure previous listeners are removed to prevent multiple calls
+        modalConfirmButton.onclick = null;
+        modalCancelButton.onclick = null;
+
+        modalConfirmButton.onclick = () => {
+            if (currentConfirmCallback) {
+                currentConfirmCallback(true);
+            }
+            hideConfirmModal();
+        };
+
+        modalCancelButton.onclick = () => {
+            if (currentConfirmCallback) {
+                currentConfirmCallback(false); // Indicate cancellation
+            }
+            hideConfirmModal();
+        };
+
+        // Allow clicking outside to close
+        confirmationModalOverlay.addEventListener('click', (event) => {
+            if (event.target === confirmationModalOverlay) {
+                if (currentConfirmCallback) {
+                    currentConfirmCallback(false); // Indicate cancellation
+                }
+                hideConfirmModal();
+            }
+        }, { once: true }); // Use once to prevent multiple bindings
+    }
+
+    function hideConfirmModal() {
+        confirmationModalOverlay.classList.remove('active');
+        currentConfirmCallback = null; // Clear the callback
+    }
+
 
     // --- File Listing ---
     async function fetchFiles() {
@@ -12,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('Error fetching files:', response.status, errorText);
-                filesTableBody.innerHTML = `<tr><td colspan="5">Error loading files: ${errorText}</td></tr>`;
+                filesTableBody.innerHTML = `<tr><td colspan="5" style="color: var(--error-color);">Error loading files: ${errorText}</td></tr>`;
                 noFilesMessage.style.display = 'none';
                 return;
             }
@@ -20,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderFiles(data.files);
         } catch (error) {
             console.error('Failed to fetch files:', error);
-            filesTableBody.innerHTML = `<tr><td colspan="5">Could not connect to server or error fetching files.</td></tr>`;
+            filesTableBody.innerHTML = `<tr><td colspan="5" style="color: var(--error-color);">Could not connect to server or error fetching files.</td></tr>`;
             noFilesMessage.style.display = 'none';
         }
     }
@@ -35,8 +120,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         files.forEach(file => {
             const row = filesTableBody.insertRow();
+            // Dynamically add data attributes for easy access
+            row.dataset.fileName = file.name;
+
             row.insertCell().textContent = file.name;
-            row.insertCell().textContent = file.formattedSize || file.size; // Use formattedSize if available
+            row.insertCell().textContent = file.formattedSize || formatBytes(file.size); // Use formattedSize if available, or format
             row.insertCell().textContent = file.lastModified;
             row.insertCell().textContent = file.type;
 
@@ -49,17 +137,20 @@ document.addEventListener('DOMContentLoaded', () => {
             actionsCell.appendChild(downloadLink);
 
             const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Delete';
+            deleteButton.innerHTML = 'Delete'; // Use innerHTML for potential icon if allowed, text for now
             deleteButton.className = 'action-button delete-button';
+            deleteButton.title = `Delete ${file.name}`;
             deleteButton.onclick = () => confirmDeleteFile(file.name);
             actionsCell.appendChild(deleteButton);
         });
     }
 
-    async function confirmDeleteFile(fileName) {
-        if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
-            await deleteFile(fileName);
-        }
+    function confirmDeleteFile(fileName) {
+        showConfirmModal(`Are you sure you want to delete "${fileName}"? This action cannot be undone.`, (confirmed) => {
+            if (confirmed) {
+                deleteFile(fileName);
+            }
+        });
     }
 
     async function deleteFile(fileName) {
@@ -67,20 +158,43 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/delete', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json', // Or 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ filename: fileName }) // Send as JSON
-                // Or for form data: new URLSearchParams({ 'filename': fileName })
+                body: JSON.stringify({ filename: fileName })
             });
             const result = await response.json();
             if (response.ok) {
-                fetchFiles(); // Refresh file list
+                // Update the specific row
+                const deletedRow = filesTableBody.querySelector(`[data-file-name="${fileName}"]`);
+                if (deletedRow) {
+                    deletedRow.remove();
+                }
+                if (filesTableBody.children.length === 0) {
+                    noFilesMessage.style.display = 'block';
+                }
+                // Optionally show a temporary success message
+                console.log(`Successfully deleted: ${fileName}`);
             } else {
-                alert(`Error deleting file: ${result.error || 'Unknown error'}`);
+                // Using a custom message display instead of alert
+                console.error(`Error deleting file: ${result.error || 'Unknown error'}`);
+                // A simple inline message could be added or a temporary toast notification
+                const errorMsg = document.createElement('p');
+                errorMsg.textContent = `Failed to delete ${fileName}: ${result.error || 'Unknown error'}`;
+                errorMsg.style.color = 'var(--error-color)';
+                errorMsg.style.marginTop = '10px';
+                errorMsg.style.textAlign = 'center';
+                uploadProgressContainer.appendChild(errorMsg); // Temporary display area
+                setTimeout(() => errorMsg.remove(), 5000); // Remove after 5 seconds
             }
         } catch (error) {
-            console.error('Failed to delete file:', error);
-            alert(`Failed to send delete request for "${fileName}".`);
+            console.error('Failed to send delete request:', error);
+            const errorMsg = document.createElement('p');
+            errorMsg.textContent = `Failed to send delete request for "${fileName}". Please check network.`;
+            errorMsg.style.color = 'var(--error-color)';
+            errorMsg.style.marginTop = '10px';
+            errorMsg.style.textAlign = 'center';
+            uploadProgressContainer.appendChild(errorMsg); // Temporary display area
+            setTimeout(() => errorMsg.remove(), 5000); // Remove after 5 seconds
         }
     }
 
@@ -111,10 +225,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (files.length > 0) {
             handleFiles(files);
         }
+        // Clear the file input so the same file can be selected again
+        event.target.value = '';
     });
 
     function handleFiles(files) {
-        uploadProgressContainer.innerHTML = ''; // Clear previous progress
+        // Clear previous progress *only if* new files are selected/dropped
+        // Otherwise, new uploads just add to the list
+        // uploadProgressContainer.innerHTML = '';
         Array.from(files).forEach(file => {
             uploadFile(file);
         });
@@ -122,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function uploadFile(file) {
         const formData = new FormData();
-        formData.append('file', file, file.name); // 'file' is the field name server expects, then the file object and its name
+        formData.append('file', file, file.name);
 
         const xhr = new XMLHttpRequest();
 
@@ -142,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
         progressItem.appendChild(fileNameSpan);
         progressItem.appendChild(progressBar);
         progressItem.appendChild(progressStatus);
-        uploadProgressContainer.appendChild(progressItem);
+        uploadProgressContainer.prepend(progressItem); // Add new progress at the top
 
 
         xhr.upload.addEventListener('progress', (event) => {
@@ -155,28 +273,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         xhr.addEventListener('load', () => {
             if (xhr.status >= 200 && xhr.status < 300) {
-                progressBarFill.style.backgroundColor = '#28a745'; // Green for success
+                progressBarFill.style.backgroundColor = 'var(--success-color)';
                 progressStatus.textContent = `Success: ${xhr.responseText}`;
+                setTimeout(() => progressItem.remove(), 3000); // Remove success item after 3 seconds
                 fetchFiles(); // Refresh file list after successful upload
             } else {
-                progressBarFill.style.backgroundColor = '#dc3545'; // Red for error
+                progressBarFill.style.backgroundColor = 'var(--error-color)';
                 progressStatus.textContent = `Error: ${xhr.status} - ${xhr.responseText || 'Upload failed'}`;
                 console.error('Upload failed:', xhr.status, xhr.responseText);
+                // Keep error message visible or provide a clear indication
             }
         });
 
         xhr.addEventListener('error', () => {
-            progressBarFill.style.backgroundColor = '#dc3545';
+            progressBarFill.style.backgroundColor = 'var(--error-color)';
             progressStatus.textContent = 'Network Error';
             console.error('Upload error (network).');
         });
 
         xhr.open('POST', '/api/upload', true);
-        // For some servers/NanoHTTPD setups, you might need to set the X-File-Name header for original filename
-        // xhr.setRequestHeader('X-File-Name', file.name);
         xhr.send(formData);
     }
 
+    /**
+     * Formats bytes into a human-readable string (e.g., 1.23 MB).
+     * @param {number} bytes The number of bytes.
+     * @param {number} decimals The number of decimal places for the output.
+     * @returns {string} Formatted size string.
+     */
     function formatBytes(bytes, decimals = 2) {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
@@ -186,6 +310,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 
-    // Initial load
+    // Initial load of files when the page is ready
     fetchFiles();
 });

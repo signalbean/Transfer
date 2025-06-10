@@ -10,6 +10,10 @@
 <header>
     <h1>Transfer</h1>
     <p>Manage your files wirelessly</p>
+    <button id="theme-toggle" class="theme-toggle-button" aria-label="Toggle theme">
+        <!-- Sun icon for light mode, Moon for dark mode -->
+        <span id="theme-icon">🌙</span>
+    </button>
 </header>
 
 <main>
@@ -19,8 +23,11 @@
             <p>Drag & drop files here or click to select</p>
             <input type="file" id="file-input" multiple>
         </div>
-        <div id="upload-progress-container"></div>
-        <button id="upload-button-manual" style="display:none;">Upload Selected</button>
+        <div id="upload-progress-container">
+            <!-- Upload progress items will be dynamically added here -->
+        </div>
+        <!-- Manual upload button hidden, files are uploaded automatically on selection/drop -->
+        <!-- <button id="upload-button-manual" style="display:none;">Upload Selected</button> -->
     </section>
 
     <section id="files-section">
@@ -37,6 +44,7 @@
                 </tr>
                 </thead>
                 <tbody>
+                <!-- File rows will be dynamically added here -->
                 </tbody>
             </table>
         </div>
@@ -48,6 +56,18 @@
     <p>Transfer App &copy; 2024</p>
 </footer>
 
+<!-- Custom Confirmation Modal HTML -->
+<div id="confirmation-modal-overlay" class="modal-overlay">
+    <div class="modal-content">
+        <p id="confirmation-modal-message"></p>
+        <div class="modal-buttons">
+            <button id="modal-confirm-button">Yes, Delete</button>
+            <button id="modal-cancel-button">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <script src="/assets/script.js"></script>
+
 </body>
 </html>

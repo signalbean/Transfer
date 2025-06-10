@@ -1,198 +1,449 @@
+/* Base styles and light mode variables */
+:root {
+    --app-background: #F5F5F5;
+    --card-background: #FFFFFF;
+    --primary-color: #1976D2;
+    --primary-gradient-start: #1976D2;
+    --primary-gradient-end: #26A69A;
+    /* Cyan accent */
+    --text-primary: #212121;
+    --text-secondary: #757575;
+    --button-background: #E3F2FD;
+    /* Light blue */
+    --button-text: #1976D2;
+    --white: #FFFFFF;
+    /* Ensures header text is white in light mode */
+    --divider-color: #E0E0E0;
+    --success-color: #4CAF50;
+    --error-color: #F44336;
+    --shadow-light: rgba(0, 0, 0, 0.05);
+    --shadow-medium: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode variables - updated to resemble app's themes.xml/colors.xml */
+body.dark-mode {
+    --app-background: #121212;
+    --card-background: #1E1E1E;
+    --primary-color: #42A5F5;
+    /* Keeping a lighter primary for dark mode header for contrast */
+    --primary-gradient-start: #42A5F5;
+    --primary-gradient-end: #80CBC4;
+    --text-primary: #E0E0E0;
+    --text-secondary: #BDBDBD;
+    /* Updated from #B0B0B0 to #BDBDBD */
+    --button-background: #1E3A5F;
+    /* Updated from #2C3E50 to #1E3A5F */
+    --button-text: #90CAF9;
+    /* Updated from #BBDEFB to #90CAF9 */
+    --white: #FFFFFF;
+    /* Fixed: ensures header text is white on dark gradient */
+    --divider-color: #424242;
+    --success-color: #66BB6A;
+    /* Updated from #4CAF50 to #66BB6A */
+    --error-color: #EF5350;
+    /* Updated from #F44336 to #EF5350 */
+    --shadow-light: rgba(255, 255, 255, 0.05);
+    --shadow-medium: rgba(255, 255, 255, 0.1);
+}
+
+/* General styles */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Inter', sans-serif;
+    /* Prefer Inter, fallback to sans-serif */
     margin: 0;
     padding: 0;
-    background-color: #f4f7f6;
-    color: #333;
-    line-height: 1.6;
+    background-color: var(--app-background);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 header {
-    background-color: #5D3FD3; /* A nice purple */
-    color: white;
-    padding: 20px 0;
+    /* Updated gradient angle to 45deg to match app's taskbar */
+    background: linear-gradient(45deg, var(--primary-gradient-start), var(--primary-gradient-end));
+    color: var(--white);
+    /* Ensures text is white in both themes for contrast with gradient */
+    padding: 1.5rem 1rem;
     text-align: center;
-    border-bottom: 4px solid #4C2AA7;
+    box-shadow: 0 2px 4px var(--shadow-medium);
+    position: relative;
+    /* For theme toggle button */
 }
 
 header h1 {
     margin: 0;
-    font-size: 2.5em;
+    font-size: 2.5rem;
+    font-weight: 700;
 }
 
 header p {
-    margin-top: 5px;
-    font-size: 1.1em;
+    margin: 0.5rem 0 0;
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.theme-toggle-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: var(--white);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.theme-toggle-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
 }
 
 main {
-    padding: 20px;
-    max-width: 1000px;
-    margin: 20px auto;
-    background-color: white;
-    box-shadow: 0 0 15px rgba(0,0,0,0.1);
-    border-radius: 8px;
+    flex: 1;
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 section {
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #eee;
-}
-section:last-child {
-    border-bottom: none;
+    background-color: var(--card-background);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px var(--shadow-light);
+    margin-bottom: 2rem;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 h2 {
-    color: #5D3FD3;
-    margin-bottom: 15px;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 5px;
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.6rem;
+    border-bottom: 2px solid var(--divider-color);
+    padding-bottom: 0.5rem;
 }
 
+/* Drop Zone */
 #drop-zone {
-    border: 3px dashed #ccc;
-    border-radius: 8px;
-    padding: 40px 20px;
+    border: 2px dashed var(--divider-color);
+    border-radius: 10px;
+    padding: 3rem 1.5rem;
     text-align: center;
     cursor: pointer;
-    background-color: #fafafa;
-    transition: background-color 0.3s, border-color 0.3s;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+    position: relative;
+    /* For file input positioning */
+    color: var(--text-secondary);
+    font-size: 1.1rem;
 }
 
 #drop-zone.dragover {
-    background-color: #e8e0ff;
-    border-color: #5D3FD3;
+    border-color: var(--primary-color);
+    /* Using rgba with fallback for primary-color-rgb */
+    background-color: rgba(25, 118, 210, 0.05);
+    /* Fallback for primary-color-rgb */
 }
 
-#drop-zone p {
-    margin: 0;
-    font-size: 1.1em;
-    color: #777;
-}
-
-#file-input {
-    display: none; /* Hidden, triggered by drop-zone click */
-}
-
-#upload-progress-container {
-    margin-top: 15px;
-}
-
-.progress-bar-item {
-    margin-bottom: 8px;
-    font-size: 0.9em;
-}
-.progress-bar {
+#drop-zone input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    background-color: #e0e0e0;
-    border-radius: 4px;
-    overflow: hidden;
-    height: 10px;
-    margin-top: 4px;
-}
-.progress-bar-fill {
     height: 100%;
-    background-color: #76c7c0; /* Teal color */
-    width: 0%;
-    transition: width 0.2s;
-}
-.progress-bar-status {
-    margin-left: 10px;
-    font-style: italic;
-    font-size: 0.85em;
+    opacity: 0;
+    cursor: pointer;
 }
 
+/* Buttons */
+button,
+.action-button {
+    background-color: var(--button-background);
+    color: var(--button-text);
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 4px var(--shadow-light);
+}
 
+button:hover,
+.action-button:hover {
+    background-color: var(--primary-color);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow-medium);
+}
+
+/* Download button specific styling to ensure it looks like a button */
+a.action-button {
+    text-decoration: none;
+    /* Remove underline from link */
+    display: inline-block;
+    /* Treat like a block element for padding */
+}
+
+.delete-button {
+    /* Updated to use button-background with error-color text */
+    background-color: var(--button-background);
+    color: var(--error-color);
+    /* Red text on button background */
+    margin-left: 0.5rem;
+}
+
+.delete-button:hover {
+    background-color: var(--error-color);
+    /* Red background on hover */
+    color: var(--white);
+    /* White text on red hover */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow-medium);
+}
+
+/* Table Styles */
 .table-container {
-    overflow-x: auto; /* For responsive tables on small screens */
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--divider-color);
+    box-shadow: 0 2px 8px var(--shadow-light);
 }
 
 #files-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 15px;
+    font-size: 0.95rem;
 }
 
-#files-table th, #files-table td {
-    border: 1px solid #ddd;
-    padding: 10px 12px;
+#files-table th,
+#files-table td {
     text-align: left;
-    vertical-align: middle;
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--divider-color);
 }
 
-#files-table th {
-    background-color: #f0ebff;
-    color: #333;
-    font-weight: bold;
+#files-table thead th {
+    background-color: var(--primary-color);
+    color: var(--white);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 #files-table tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
+    /* Using rgba with fallback for primary-color-rgb */
+    background-color: rgba(25, 118, 210, 0.03);
+    /* Fallback for primary-color-rgb */
 }
 
 #files-table tbody tr:hover {
-    background-color: #f1f1f1;
+    /* Using rgba with fallback for primary-color-rgb */
+    background-color: rgba(25, 118, 210, 0.1);
+    /* Fallback for primary-color-rgb */
 }
-
-.action-button, button {
-    padding: 8px 15px;
-    background-color: #5D3FD3;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    text-decoration: none;
-    font-size: 0.9em;
-    transition: background-color 0.2s;
-    margin-right: 5px;
-}
-.action-button:hover, button:hover {
-    background-color: #4C2AA7;
-}
-.delete-button {
-    background-color: #e74c3c; /* Red for delete */
-}
-.delete-button:hover {
-    background-color: #c0392b;
-}
-
 
 #no-files-message {
     text-align: center;
-    color: #777;
-    padding: 20px;
-    font-style: italic;
+    color: var(--text-secondary);
+    padding: 1.5rem;
+    margin-top: 1rem;
+    border: 1px dashed var(--divider-color);
+    border-radius: 8px;
+    background-color: var(--card-background);
 }
 
+/* Upload Progress */
+#upload-progress-container {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.progress-bar-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.progress-bar-item span:first-child {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.progress-bar {
+    width: 100%;
+    background-color: var(--divider-color);
+    border-radius: 5px;
+    overflow: hidden;
+    height: 10px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background-color: var(--primary-color);
+    border-radius: 5px;
+    transition: width 0.4s ease-in-out, background-color 0.3s ease;
+}
+
+.progress-bar-status {
+    text-align: right;
+    font-weight: 500;
+    margin-top: 0.2rem;
+    color: var(--text-secondary);
+}
+
+/* Footer */
 footer {
     text-align: center;
-    padding: 20px 0;
-    margin-top: 30px;
-    font-size: 0.9em;
-    color: #777;
-    border-top: 1px solid #eee;
+    padding: 1.5rem 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--divider-color);
+    margin-top: 2rem;
+    background-color: var(--card-background);
+    box-shadow: 0 -2px 4px var(--shadow-light);
+}
+
+/* Custom Modal for Confirmation */
+.modal-overlay {
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+    /* For fade-in effect */
+}
+
+.modal-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-content {
+    background-color: var(--card-background);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px var(--shadow-medium);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal-content {
+    transform: translateY(0);
+}
+
+.modal-content p {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
     header h1 {
-        font-size: 2em;
+        font-size: 2rem;
     }
+
     main {
-        padding: 15px;
-        margin: 15px;
+        margin: 1.5rem auto;
+        padding: 0 0.8rem;
     }
+
+    section {
+        padding: 1rem;
+    }
+
+    h2 {
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+    }
+
     #drop-zone {
-        padding: 30px 15px;
+        padding: 2rem 1rem;
+        font-size: 1rem;
     }
-    .action-button, button {
-        padding: 10px; /* Make buttons easier to tap */
-        width: 100%;
-        margin-bottom: 8px;
-        box-sizing: border-box;
+
+    #files-table th,
+    #files-table td {
+        padding: 10px;
+        font-size: 0.85rem;
     }
-    #files-table th, #files-table td {
-        padding: 8px;
+
+    button,
+    .action-button {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        padding: 1rem 0.8rem;
+    }
+
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    .theme-toggle-button {
+        font-size: 1.2rem;
+        width: 35px;
+        height: 35px;
+    }
+
+    main {
+        margin: 1rem auto;
+        padding: 0 0.5rem;
+    }
+
+    section {
+        padding: 0.8rem;
+    }
+
+    h2 {
+        font-size: 1.2rem;
+    }
+
+    .modal-content {
+        padding: 1.5rem;
+    }
+
+    .modal-content p {
+        font-size: 1rem;
     }
 }
