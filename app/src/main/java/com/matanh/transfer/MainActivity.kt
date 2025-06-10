@@ -536,8 +536,10 @@ class MainActivity : AppCompatActivity() {
         val newUri = folderUriString?.let { Uri.parse(it) }
 
         if (newUri != null && newUri != currentSelectedFolderUri) {
+            Log.d("MainActivity", "Shared folder URI has changed. Restarting server.")
             currentSelectedFolderUri = newUri
-            viewModel.setSelectedFolderUri(newUri) // This should trigger file loading via observer
+            viewModel.setSelectedFolderUri(newUri) // Update the UI
+            startFileServer(newUri) // Explicitly tell the service to restart with the new URI
         } else if (newUri == null && currentSelectedFolderUri != null) {
             // Folder was deselected
             currentSelectedFolderUri = null

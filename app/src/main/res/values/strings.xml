@@ -34,7 +34,6 @@
 
     <string name="text_pasted_to_file">Text pasted to %s</string>
     <string name="clipboard_empty">Clipboard is empty or does not contain text.</string>
-<!--    TODO: share-->
     <string name="shared_text_saved">Shared text saved as %s</string>
     <string name="shared_file_saved">Shared file saved: %s</string>
     <string name="error_saving_shared_content">Error saving shared content.</string>
