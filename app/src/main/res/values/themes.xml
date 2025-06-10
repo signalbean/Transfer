@@ -1,36 +1,47 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
+
     <style name="Theme.TransferApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="android:colorBackground">@color/app_background_color</item> <item name="colorSurface">@color/card_background_color</item> <item name="colorOnPrimary">@color/white</item>
-        <item name="colorOnSecondary">@color/black</item> <item name="colorOnBackground">@color/text_color_primary_light</item> <item name="colorOnSurface">@color/text_color_primary_light</item> <item name="android:textColorPrimary">@color/text_color_primary_light</item>
+        <!-- Background -->
+        <item name="android:colorBackground">@color/app_background_color</item>
+        <item name="colorSurface">@color/card_background_color</item>
+
+        <!-- On Colors -->
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="colorOnBackground">@color/text_color_primary_light</item>
+        <item name="colorOnSurface">@color/text_color_primary_light</item>
+
+        <!-- Text Colors -->
+        <item name="android:textColorPrimary">@color/text_color_primary_light</item>
         <item name="android:textColorSecondary">@color/text_color_secondary_light</item>
+
+        <!-- Icon Tint -->
         <item name="iconTint">@color/icon_tint_color_light</item>
 
-        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+        <!-- Status Bar and Window Appearance -->
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Action Mode and Toolbar Styling -->
         <item name="windowActionModeOverlay">true</item>
         <item name="actionModeStyle">@style/CustomActionModeStyle</item>
         <item name="toolbarStyle">@style/Widget.App.Toolbar</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item> </style>
-
-
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
-
-    <style name="CustomActionModeStyle" parent="Widget.AppCompat.ActionMode">
-        <item name="background">?attr/colorPrimaryDark</item> <item name="titleTextStyle">@style/CustomActionModeTitleTextStyle</item>
     </style>
 
-    <style name="CustomActionModeTitleTextStyle" parent="@style/TextAppearance.AppCompat.Widget.ActionMode.Title">
-        <item name="android:textColor">@color/white</item>
-    </style>
 
     <!-- menu background -->
-    <style name="Widget.TransferApp.ActionMode" parent="Widget.AppCompat.ActionMode">
+    <style name="CustomActionModeStyle" parent="Widget.AppCompat.ActionMode">
         <item name="background">@drawable/gradient_header</item>
     </style>
 
     <style name="Widget.App.Toolbar" parent="Widget.AppCompat.Toolbar">
         <item name="android:background">@drawable/gradient_header</item>
-        <item name="titleTextColor">@color/white</item> <item name="popupTheme">@style/AppTheme.PopupOverlay</item>
+        <item name="titleTextColor">@color/white</item>
+        <item name="popupTheme">@style/AppTheme.PopupOverlay</item>
         <item name="android:theme">@style/ThemeOverlay.AppCompat.Dark.ActionBar</item>
     </style>
+
+    <!--    control menu text colors-->
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
 </resources>
