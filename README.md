@@ -33,7 +33,7 @@ Imagine you need to transfer a file between your laptop and desktop — but you 
 Recommended way:
 from [IzzyOnDroid](https://apt.izzysoft.de/fdroid/index/apk/com.matanh.transfer) (use an F-Droid client like Neo Store, Droid-ify, or add IzzyOnDroid repo.)
 
-  <a href="https://apt.izzysoft.de/fdroid/index/apk/app.upryzing.clerotri">
+  <a href="https://apt.izzysoft.de/fdroid/index/apk/com.matanh.transfer">
     <img alt="Get it on IzzyOnDroid" src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroidButtonGreyBorder_nofont.png" height="54">
   </a>
 
@@ -50,6 +50,15 @@ Directly from [github releases](https://github.com/matan-h/Transfer/releases) (Y
 6. You're in! If IP permissions are on (default), you'll get a prompt on your phone to allow the new device.
 
 It's designed to be that simple. Enjoy your new wireless drive.
+
+## FAQ
+### Can I set a specific IP address to use every time?
+Yes, you can set a [static IP](https://junipersys.com/support/article/14695) on your Android device.
+
+[asked here](https://www.reddit.com/r/fossdroid/comments/1l3yi6m/comment/mw9t8lt)
+
+### Can I use Transfer without an internet connection?
+Yes, Transfer works over your local Wi-Fi network, so an internet connection is not required. However, all devices must be connected to the same local network.
 
 ## Contributing
 
