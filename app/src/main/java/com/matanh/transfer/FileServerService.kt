@@ -5,7 +5,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
@@ -14,12 +13,12 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import io.ktor.server.cio.CIO
-import io.ktor.server.engine.ApplicationEngine
-import io.ktor.server.engine.embeddedServer
 import io.ktor.server.engine.EmbeddedServer
+import io.ktor.server.engine.embeddedServer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -107,7 +106,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
             Constants.ACTION_START_SERVICE -> {
                 val folderUriString = intent.getStringExtra(Constants.EXTRA_FOLDER_URI)
                 if (folderUriString != null) {
-                    currentSharedFolderUri = Uri.parse(folderUriString)
+                    currentSharedFolderUri = folderUriString.toUri()
                     startKtorServer()
                 } else {
                     Log.e(TAG, "Folder URI missing, stopping service")
@@ -304,7 +303,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
     private fun updateNotification() {
         if (_serverState.value is ServerState.Running) {
             val notificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(Constants.NOTIFICATION_ID, createNotification())
         }
     }

@@ -36,10 +36,10 @@ class AboutActivity : AppCompatActivity() {
         // Set Version Name dynamically
         val versionTextView: TextView = findViewById(R.id.tvVersion)
         val versionName = BuildConfig.VERSION_NAME
-        versionTextView.text = getString(R.string.version_name, 0,versionName)
+        versionTextView.text = getString(R.string.version_name, 0, versionName)
 
-        fun updateText(){
-            versionTextView.text = getString(R.string.version_name, clickCount,versionName)
+        fun updateText() {
+            versionTextView.text = getString(R.string.version_name, clickCount, versionName)
         }
 
         versionTextView.setOnClickListener {
@@ -83,19 +83,22 @@ class AboutActivity : AppCompatActivity() {
             startActivity(intent)
         }
     }
+
     private fun toggleInvertColors() {
-        Toast.makeText(this, "flash! ",Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "flash! ", Toast.LENGTH_SHORT).show()
         // Grab the very top view of the window
         val rootView: View = window.decorView.rootView
 
         if (!inverted) {
             // Build an invert‐color matrix
-            val invertMatrix = ColorMatrix(floatArrayOf(
-                -1f, 0f, 0f, 0f, 255f,
-                0f, -1f, 0f, 0f, 255f,
-                0f, 0f, -1f, 0f, 255f,
-                0f, 0f, 0f, 1f,   0f
-            ))
+            val invertMatrix = ColorMatrix(
+                floatArrayOf(
+                    -1f, 0f, 0f, 0f, 255f,
+                    0f, -1f, 0f, 0f, 255f,
+                    0f, 0f, -1f, 0f, 255f,
+                    0f, 0f, 0f, 1f, 0f
+                )
+            )
             val filter = ColorMatrixColorFilter(invertMatrix)
             // Create a paint with that filter
             val paint = Paint().apply { colorFilter = filter }

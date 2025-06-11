@@ -20,9 +20,9 @@ class FileAdapter(
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvName: TextView = view.findViewById(R.id.tvFileName)
         val tvSize: TextView = view.findViewById(R.id.tvFileSize)
-        val ivIcon: ImageView = view.findViewById(R.id.ivFileIcon)
         val ivSelectionCheck: ImageView = view.findViewById(R.id.ivSelectionCheck)
-        val itemLayout: ConstraintLayout = view as ConstraintLayout // Assuming root is ConstraintLayout
+        val itemLayout: ConstraintLayout =
+            view as ConstraintLayout // Assuming root is ConstraintLayout
 
         fun bind(file: FileItem, position: Int, isSelected: Boolean) {
             tvName.text = file.name
@@ -30,10 +30,20 @@ class FileAdapter(
 
 
             if (isSelected) {
-                itemLayout.setBackgroundColor(ContextCompat.getColor(itemView.context, R.color.file_item_selected_background))
+                itemLayout.setBackgroundColor(
+                    ContextCompat.getColor(
+                        itemView.context,
+                        R.color.file_item_selected_background
+                    )
+                )
                 ivSelectionCheck.visibility = View.VISIBLE
             } else {
-                itemLayout.setBackgroundColor(ContextCompat.getColor(itemView.context, R.color.default_file_item_background))
+                itemLayout.setBackgroundColor(
+                    ContextCompat.getColor(
+                        itemView.context,
+                        R.color.default_file_item_background
+                    )
+                )
 
                 ivSelectionCheck.visibility = View.GONE
             }

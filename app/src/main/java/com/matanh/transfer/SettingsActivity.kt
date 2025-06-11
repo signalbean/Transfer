@@ -18,14 +18,16 @@ import androidx.preference.PreferenceManager
 
 class SettingsActivity : AppCompatActivity() {
 
-    private val selectFolderLauncher = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
-        if (uri != null) {
-            Utils.persistUriPermission(this, uri)
-            val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-            prefs.edit { putString(Constants.EXTRA_FOLDER_URI, uri.toString()) }
-            Toast.makeText(this, "Shared folder selected", Toast.LENGTH_SHORT).show()
+    private val selectFolderLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
+            if (uri != null) {
+                Utils.persistUriPermission(this, uri)
+                val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+                prefs.edit { putString(Constants.EXTRA_FOLDER_URI, uri.toString()) }
+                Toast.makeText(this, "Shared folder selected", Toast.LENGTH_SHORT).show()
+            }
         }
-    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == android.R.id.home) {
             finish()
@@ -59,16 +61,25 @@ class SettingsActivity : AppCompatActivity() {
             setPreferencesFromResource(R.xml.preferences, rootKey)
 
             // Password Preference
-            val passwordPreference = findPreference<EditTextPreference>(getString(R.string.pref_key_server_password))
+            val passwordPreference =
+                findPreference<EditTextPreference>(getString(R.string.pref_key_server_password))
             updatePasswordSummary(passwordPreference)
             passwordPreference?.setOnPreferenceChangeListener { preference, newValue ->
                 val newPassword = newValue as String?
                 if (newPassword.isNullOrEmpty()) {
                     preference.summary = getString(R.string.pref_summary_password_protect_off)
-                    Toast.makeText(requireContext(), getString(R.string.password_cleared), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        getString(R.string.password_cleared),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
                     preference.summary = getString(R.string.pref_summary_password_protect_on)
-                    Toast.makeText(requireContext(), getString(R.string.password_set), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        getString(R.string.password_set),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 true
             }

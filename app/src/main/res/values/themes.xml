@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
 
     <style name="Theme.TransferApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Background -->

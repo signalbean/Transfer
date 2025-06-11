@@ -4,23 +4,46 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
-import io.ktor.http.*
+import io.ktor.http.ContentDisposition
+import io.ktor.http.ContentType
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.http.content.*
-import io.ktor.server.plugins.calllogging.*
-import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.plugins.cors.routing.*
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.Application
+import io.ktor.server.application.createApplicationPlugin
+import io.ktor.server.application.install
+import io.ktor.server.application.log
+import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.UserIdPrincipal
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.basic
+import io.ktor.server.http.content.CompressedFileType
+import io.ktor.server.http.content.resolveResource
+import io.ktor.server.http.content.staticResources
+import io.ktor.server.plugins.calllogging.CallLogging
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.origin
-import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import io.ktor.util.*
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.receiveChannel
+import io.ktor.server.request.receiveMultipart
+import io.ktor.server.request.receiveText
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.RoutingCall
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.put
+import io.ktor.server.routing.route
+import io.ktor.server.routing.routing
+import io.ktor.util.AttributeKey
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyTo
@@ -33,7 +56,9 @@ import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.channels.Channels
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 const val TAG_KTOR_MODULE = "TransferKtorModule"
 
@@ -125,9 +150,12 @@ suspend fun handleFileDownload(
                 }
             }
         })
-} catch (e: Exception) {
+    } catch (e: Exception) {
         Log.e(TAG_KTOR_MODULE, "Error streaming file $fileName", e)
-        call.respond(HttpStatusCode.InternalServerError, "Error serving file: ${e.localizedMessage}")
+        call.respond(
+            HttpStatusCode.InternalServerError,
+            "Error serving file: ${e.localizedMessage}"
+        )
     } finally {
         inputStream.close()
     }
@@ -155,7 +183,7 @@ suspend fun handleFileUpload(
     // 2. Generate a unique filename
     val nameWithoutExt = sanitizedFileName.substringBeforeLast('.', sanitizedFileName)
     val extension = sanitizedFileName.substringAfterLast('.', "")
-    val uniqueFileName = Utils.generateUniqueFileName(baseDocumentFile, nameWithoutExt,extension)
+    val uniqueFileName = Utils.generateUniqueFileName(baseDocumentFile, nameWithoutExt, extension)
 
 
     // 3. Determine effective MIME type and create the target file
@@ -294,7 +322,10 @@ fun Application.transferServerModule(
                 if (resource != null) {
                     call.respond(resource)
                 } else {
-                    call.respond(HttpStatusCode.NotFound, "UI not found (index.html missing in assets).")
+                    call.respond(
+                        HttpStatusCode.NotFound,
+                        "UI not found (index.html missing in assets)."
+                    )
                 }
             }
 
@@ -309,7 +340,10 @@ fun Application.transferServerModule(
                             .filter { it.isFile && it.canRead() }
                             .mapNotNull { docFile ->
                                 val lastModifiedDate = Date(docFile.lastModified())
-                                val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).apply {
+                                val dateFormat = SimpleDateFormat(
+                                    "yyyy-MM-dd HH:mm:ss",
+                                    Locale.getDefault()
+                                ).apply {
                                     timeZone = TimeZone.getDefault()
                                 }
                                 FileInfo(
@@ -318,14 +352,22 @@ fun Application.transferServerModule(
                                     formattedSize = Utils.formatFileSize(docFile.length()),
                                     lastModified = dateFormat.format(lastModifiedDate),
                                     type = docFile.type ?: "unknown",
-                                    downloadUrl = "/api/download/${URLEncoder.encode(docFile.name, "UTF-8")}"
+                                    downloadUrl = "/api/download/${
+                                        URLEncoder.encode(
+                                            docFile.name,
+                                            "UTF-8"
+                                        )
+                                    }"
                                 )
                             }
                         Log.d(TAG_KTOR_MODULE, "Files list: $filesList")
                         call.respond(FileListResponse(filesList))
                     } catch (e: Exception) {
                         Log.e(TAG_KTOR_MODULE, "Error listing files", e)
-                        call.respond(HttpStatusCode.InternalServerError, ErrorResponse("Error listing files: ${e.localizedMessage}"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ErrorResponse("Error listing files: ${e.localizedMessage}")
+                        )
                     }
                 }
 
@@ -359,24 +401,44 @@ fun Application.transferServerModule(
                                         uploadedFileNames.add(fileName)
                                         filesUploadedCount++
                                     } else {
-                                        Log.e(TAG_KTOR_MODULE, "Upload failed for $originalFileName: $error")
+                                        Log.e(
+                                            TAG_KTOR_MODULE,
+                                            "Upload failed for $originalFileName: $error"
+                                        )
                                     }
                                 }
+
                                 is PartData.FormItem -> {
-                                    Log.d(TAG_KTOR_MODULE, "Form item: ${part.name} = ${part.value}")
+                                    Log.d(
+                                        TAG_KTOR_MODULE,
+                                        "Form item: ${part.name} = ${part.value}"
+                                    )
                                 }
+
                                 else -> {}
                             }
                             part.dispose()
                         }
                         if (filesUploadedCount > 0) {
-                            call.respondText("Successfully uploaded: ${uploadedFileNames.joinToString(", ")}")
+                            call.respondText(
+                                "Successfully uploaded: ${
+                                    uploadedFileNames.joinToString(
+                                        ", "
+                                    )
+                                }"
+                            )
                         } else {
-                            call.respond(HttpStatusCode.BadRequest, "No files were uploaded or upload failed.")
+                            call.respond(
+                                HttpStatusCode.BadRequest,
+                                "No files were uploaded or upload failed."
+                            )
                         }
                     } catch (e: Exception) {
                         Log.e(TAG_KTOR_MODULE, "Exception during file upload", e)
-                        call.respond(HttpStatusCode.InternalServerError, "Upload error: ${e.localizedMessage}")
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            "Upload error: ${e.localizedMessage}"
+                        )
                     }
                 }
 
@@ -386,7 +448,10 @@ fun Application.transferServerModule(
                         val jsonObject = JSONObject(requestBody)
                         val fileNameToDelete = jsonObject.optString("filename", "")
                         if (fileNameToDelete.isEmpty()) {
-                            call.respond(HttpStatusCode.BadRequest, ErrorResponse("Filename not provided."))
+                            call.respond(
+                                HttpStatusCode.BadRequest,
+                                ErrorResponse("Filename not provided.")
+                            )
                             return@post
                         }
                         val (success, error) = handleFileDelete(
@@ -395,13 +460,22 @@ fun Application.transferServerModule(
                             notifyService = { fileServerService.notifyFilePushed() }
                         )
                         if (success) {
-                            call.respond(HttpStatusCode.OK, SuccessResponse("File '$fileNameToDelete' deleted."))
+                            call.respond(
+                                HttpStatusCode.OK,
+                                SuccessResponse("File '$fileNameToDelete' deleted.")
+                            )
                         } else {
-                            call.respond(HttpStatusCode.InternalServerError, ErrorResponse(error ?: "Failed to delete file."))
+                            call.respond(
+                                HttpStatusCode.InternalServerError,
+                                ErrorResponse(error ?: "Failed to delete file.")
+                            )
                         }
                     } catch (e: Exception) {
                         Log.e(TAG_KTOR_MODULE, "Error processing delete request", e)
-                        call.respond(HttpStatusCode.InternalServerError, ErrorResponse("Server error during delete: ${e.localizedMessage}"))
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ErrorResponse("Server error during delete: ${e.localizedMessage}")
+                        )
                     }
                 }
             }
@@ -427,9 +501,15 @@ fun Application.transferServerModule(
                     notifyService = { fileServerService.notifyFilePushed() }
                 )
                 if (uploadedFileName != null) {
-                    call.respond(HttpStatusCode.Created, "File '$uploadedFileName' uploaded via PUT.")
+                    call.respond(
+                        HttpStatusCode.Created,
+                        "File '$uploadedFileName' uploaded via PUT."
+                    )
                 } else {
-                    call.respond(HttpStatusCode.InternalServerError, "Error during PUT upload: $error")
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        "Error during PUT upload: $error"
+                    )
                 }
             }
 
@@ -454,7 +534,10 @@ fun Application.transferServerModule(
                 if (success) {
                     call.respondText("File '$fileName' deleted.", status = HttpStatusCode.OK)
                 } else {
-                    call.respondText("Error: ${error ?: "Could not delete file '$fileName'."}", status = HttpStatusCode.InternalServerError)
+                    call.respondText(
+                        "Error: ${error ?: "Could not delete file '$fileName'."}",
+                        status = HttpStatusCode.InternalServerError
+                    )
                 }
             }
         }

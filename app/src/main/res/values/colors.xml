@@ -16,13 +16,6 @@
 <color name="black">#FF000000</color>
 
 
-<color name="colorPrimaryDark">#38ED00</color>
-<color name="colorAccent">#FF4081</color> <color name="light_gray">#F5F5F5</color>
-<color name="medium_gray">#9E9E9E</color>
-<color name="dark_gray">#616161</color>
-
-<color name="grey">#FF757575</color>
-<color name="blue">#2196F3</color>r
 <color name="green">#4CAF50</color>
 <color name="red">#F44336</color>
 
@@ -39,7 +32,6 @@
 <color name="text_color_primary_dark">@color/text_color_primary_light</color>
 <color name="text_color_secondary_dark">@color/text_color_secondary_light</color>
 <color name="icon_tint_color_dark">@color/icon_tint_color_light</color>
-<color name="toolbar_icon_tint_dark">@color/toolbar_icon_tint_light</color>
 
 
 

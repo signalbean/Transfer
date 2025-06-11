@@ -8,6 +8,7 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 
@@ -19,12 +20,17 @@ class SetupActivity : AppCompatActivity() {
                 Utils.persistUriPermission(this, uri) // Persist permission
                 // Store the URI so MainActivity can pick it up
                 val prefs = getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
-                prefs.edit().putString(Constants.EXTRA_FOLDER_URI, uri.toString()).apply()
+                prefs.edit { putString(Constants.EXTRA_FOLDER_URI, uri.toString()) }
 
-                Toast.makeText(this, getString(R.string.folder_setup_complete), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.folder_setup_complete), Toast.LENGTH_SHORT)
+                    .show()
                 launchMainActivity()
             } else {
-                Toast.makeText(this, getString(R.string.folder_selection_cancelled), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    getString(R.string.folder_selection_cancelled),
+                    Toast.LENGTH_SHORT
+                ).show()
                 // User might try again or exit; stay on this activity
             }
         }
@@ -32,8 +38,6 @@ class SetupActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Check if a folder is already configured and permission persists
-//        val persistedUriString = Utils.getPersistedUri(this)?.toString()
         val prefs = getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
 
         val persistedUriString = prefs.getString(Constants.EXTRA_FOLDER_URI, null)

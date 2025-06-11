@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.net.Uri
@@ -23,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -68,22 +68,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val uploadFileLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let { sourceUri ->
-            if (currentSelectedFolderUri == null) {
-                Toast.makeText(this, getString(R.string.shared_folder_not_selected), Toast.LENGTH_SHORT).show()
-                return@registerForActivityResult
-            }
-            val fileName = Utils.getFileName(this, sourceUri)
-            val copiedFile = Utils.copyUriToAppDir(this, sourceUri, currentSelectedFolderUri!!, fileName?:"upload.txt")
-            if (copiedFile != null && copiedFile.exists()) {
-                Toast.makeText(this, getString(R.string.file_uploaded, copiedFile.name), Toast.LENGTH_SHORT).show()
-                viewModel.loadFiles(currentSelectedFolderUri!!)
-            } else {
-                Toast.makeText(this, getString(R.string.file_upload_failed), Toast.LENGTH_SHORT).show()
+    private val uploadFileLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let { sourceUri ->
+                if (currentSelectedFolderUri == null) {
+                    Toast.makeText(
+                        this,
+                        getString(R.string.shared_folder_not_selected),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@registerForActivityResult
+                }
+                val fileName = Utils.getFileName(this, sourceUri)
+                val copiedFile = Utils.copyUriToAppDir(
+                    this,
+                    sourceUri,
+                    currentSelectedFolderUri!!,
+                    fileName ?: "upload.txt"
+                )
+                if (copiedFile != null && copiedFile.exists()) {
+                    Toast.makeText(
+                        this,
+                        getString(R.string.file_uploaded, copiedFile.name),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    viewModel.loadFiles(currentSelectedFolderUri!!)
+                } else {
+                    Toast.makeText(this, getString(R.string.file_upload_failed), Toast.LENGTH_SHORT)
+                        .show()
+                }
             }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,8 +108,10 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.title = getString(R.string.app_name)
 
-        viewModel = ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(application))
-            .get(MainViewModel::class.java)
+        viewModel = ViewModelProvider(
+            this,
+            ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        )[MainViewModel::class.java]
 
         initViews()
         setupClickListeners()
@@ -103,7 +120,7 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
         val folderUriString = prefs.getString(Constants.EXTRA_FOLDER_URI, null)
         if (folderUriString != null) {
-            currentSelectedFolderUri = Uri.parse(folderUriString)
+            currentSelectedFolderUri = folderUriString.toUri()
             viewModel.setSelectedFolderUri(currentSelectedFolderUri)
             if (currentSelectedFolderUri != null) {
                 viewModel.loadFiles(currentSelectedFolderUri!!) // Load files for the selected folder
@@ -116,22 +133,23 @@ class MainActivity : AppCompatActivity() {
         }
 
         Intent(this, FileServerService::class.java).also { intent ->
-            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+            bindService(intent, serviceConnection, BIND_AUTO_CREATE)
         }
         handleShareIntent(intent)
 
     }
+
     private fun navigateToSettingsWithMessage(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
         startActivity(Intent(this, SettingsActivity::class.java))
         // Optionally finish MainActivity if a folder is mandatory to proceed
         // finish()
     }
+
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         handleShareIntent(intent)
     }
-
 
 
     private fun initViews() {
@@ -147,7 +165,7 @@ class MainActivity : AppCompatActivity() {
         btnCopyIp.setOnClickListener {
             val ipText = tvIpAddress.text.toString()
             if (ipText != getString(R.string.waiting_for_network) && ipText.isNotEmpty()) {
-                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 val clip = ClipData.newPlainText("Server IP", ipText)
                 clipboard.setPrimaryClip(clip)
                 Toast.makeText(this, R.string.ip_copied_to_clipboard, Toast.LENGTH_SHORT).show()
@@ -159,7 +177,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupFileList() {
-        fileAdapter = FileAdapter(emptyList(),
+        fileAdapter = FileAdapter(
+            emptyList(),
             onItemClick = { fileItem, position ->
                 if (actionMode != null) {
                     toggleSelection(position)
@@ -218,8 +237,12 @@ class MainActivity : AppCompatActivity() {
 
         override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
             val selectedFiles = fileAdapter.getSelectedFileItems()
-            if (selectedFiles.isEmpty()){
-                Toast.makeText(this@MainActivity, getString(R.string.no_files_selected), Toast.LENGTH_SHORT).show()
+            if (selectedFiles.isEmpty()) {
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.no_files_selected),
+                    Toast.LENGTH_SHORT
+                ).show()
                 // should not be possible
                 return false
             }
@@ -229,10 +252,12 @@ class MainActivity : AppCompatActivity() {
                     confirmDeleteMultipleFiles(selectedFiles)
                     true
                 }
+
                 R.id.action_share_contextual -> {
                     shareMultipleFiles(selectedFiles)
                     true
                 }
+
                 R.id.action_select_all -> {
                     fileAdapter.selectAll()
                     val count = fileAdapter.getSelectedItemCount()
@@ -243,6 +268,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     true
                 }
+
                 else -> false
             }
         }
@@ -253,6 +279,7 @@ class MainActivity : AppCompatActivity() {
             fabUpload.show() // Show FAB again
         }
     }
+
     // handle share
     private fun handleShareIntent(intent: Intent?) {
         when (intent?.action) {
@@ -263,19 +290,26 @@ class MainActivity : AppCompatActivity() {
                     handleSharedFile(intent)
                 }
             }
+
             Intent.ACTION_SEND_MULTIPLE -> {
                 handleMultipleFiles(intent)
             }
         }
     }
+
     private fun handleSharedText(intent: Intent) {
         val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
         if (sharedText.isNullOrEmpty() || currentSelectedFolderUri == null) return
 
-        val file = Utils.createTextFileInDir(this, currentSelectedFolderUri!!, "share","txt", sharedText)
+        val file =
+            Utils.createTextFileInDir(this, currentSelectedFolderUri!!, "share", "txt", sharedText)
 
         if (file != null && file.exists()) {
-            Toast.makeText(this, getString(R.string.shared_text_saved, file.name), Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                getString(R.string.shared_text_saved, file.name),
+                Toast.LENGTH_SHORT
+            ).show()
             viewModel.loadFiles(currentSelectedFolderUri!!)
         } else {
             Toast.makeText(this, R.string.error_saving_shared_content, Toast.LENGTH_SHORT).show()
@@ -290,7 +324,11 @@ class MainActivity : AppCompatActivity() {
         val copiedFile = Utils.copyUriToAppDir(this, fileUri, currentSelectedFolderUri!!, fileName)
 
         if (copiedFile != null && copiedFile.exists()) {
-            Toast.makeText(this, getString(R.string.shared_file_saved, fileName), Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                getString(R.string.shared_file_saved, fileName),
+                Toast.LENGTH_SHORT
+            ).show()
             viewModel.loadFiles(currentSelectedFolderUri!!)
         } else {
             Toast.makeText(this, R.string.error_saving_shared_content, Toast.LENGTH_SHORT).show()
@@ -325,7 +363,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
     @SuppressLint("SetTextI18n")
     private fun observeServerState() {
         if (!isServiceBound || fileServerService == null) return
@@ -335,20 +372,47 @@ class MainActivity : AppCompatActivity() {
                     when (state) {
                         is ServerState.Running -> {
                             tvServerStatus.text = getString(R.string.server_running)
-                            tvServerStatus.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.green))
-                            viewStatusIndicator.background = ContextCompat.getDrawable(this@MainActivity, R.drawable.status_indicator_running)
+                            tvServerStatus.setTextColor(
+                                ContextCompat.getColor(
+                                    this@MainActivity,
+                                    R.color.green
+                                )
+                            )
+                            viewStatusIndicator.background = ContextCompat.getDrawable(
+                                this@MainActivity,
+                                R.drawable.status_indicator_running
+                            )
                             tvIpAddress.text = "${state.ip}:${state.port}"
                         }
+
                         is ServerState.Stopped -> {
                             tvServerStatus.text = getString(R.string.server_stopped)
-                            tvServerStatus.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.red))
-                            viewStatusIndicator.background = ContextCompat.getDrawable(this@MainActivity, R.drawable.status_indicator_stopped)
+                            tvServerStatus.setTextColor(
+                                ContextCompat.getColor(
+                                    this@MainActivity,
+                                    R.color.red
+                                )
+                            )
+                            viewStatusIndicator.background = ContextCompat.getDrawable(
+                                this@MainActivity,
+                                R.drawable.status_indicator_stopped
+                            )
                             tvIpAddress.text = getString(R.string.waiting_for_network)
                         }
+
                         is ServerState.Error -> {
-                            tvServerStatus.text = getString(R.string.server_error_format, state.message)
-                            tvServerStatus.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.red))
-                            viewStatusIndicator.background = ContextCompat.getDrawable(this@MainActivity, R.drawable.status_indicator_stopped) // create this
+                            tvServerStatus.text =
+                                getString(R.string.server_error_format, state.message)
+                            tvServerStatus.setTextColor(
+                                ContextCompat.getColor(
+                                    this@MainActivity,
+                                    R.color.red
+                                )
+                            )
+                            viewStatusIndicator.background = ContextCompat.getDrawable(
+                                this@MainActivity,
+                                R.drawable.status_indicator_stopped
+                            ) // create this
                             tvIpAddress.text = getString(R.string.waiting_for_network)
                         }
                     }
@@ -390,7 +454,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    private fun observePullRefresh(){
+
+    private fun observePullRefresh() {
         if (!isServiceBound || fileServerService == null) return
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -428,7 +493,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (urisToShare.isEmpty()) {
-            Toast.makeText(this, getString(R.string.no_readable_files_share), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.no_readable_files_share), Toast.LENGTH_SHORT)
+                .show()
             return
         }
 
@@ -440,9 +506,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         try {
-            startActivity(Intent.createChooser(shareIntent, getString(R.string.share_multiple_files_title, urisToShare.size)))
+            startActivity(
+                Intent.createChooser(
+                    shareIntent,
+                    getString(R.string.share_multiple_files_title, urisToShare.size)
+                )
+            )
         } catch (e: Exception) {
-            Toast.makeText(this, getString(R.string.share_file_error, e.message), Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                getString(R.string.share_file_error, e.message),
+                Toast.LENGTH_SHORT
+            ).show()
         }
         actionMode?.finish()
     }
@@ -459,12 +534,20 @@ class MainActivity : AppCompatActivity() {
                     DocumentFile.fromSingleUri(this, fileItem.uri)?.let { docFile ->
                         if (!docFile.delete()) {
                             allDeleted = false
-                            Toast.makeText(this, getString(R.string.file_delete_failed, docFile.name), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this,
+                                getString(R.string.file_delete_failed, docFile.name),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
                 }
                 if (allDeleted && files.isNotEmpty()) {
-                    Toast.makeText(this, getString(R.string.files_deleted_successfully, files.size), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.files_deleted_successfully, files.size),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 currentSelectedFolderUri?.let { viewModel.loadFiles(it) } // Refresh list
                 actionMode?.finish()
@@ -478,23 +561,38 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Shared folder not selected.", Toast.LENGTH_SHORT).show()
             return
         }
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         if (clipboard.hasPrimaryClip() && clipboard.primaryClipDescription?.hasMimeType("text/plain") == true) {
             val item = clipboard.primaryClip?.getItemAt(0)
             val textToPaste = item?.text?.toString()
             if (!textToPaste.isNullOrEmpty()) {
-                val file = Utils.createTextFileInDir(this, currentSelectedFolderUri!!, "paste","txt", textToPaste)
+                val file = Utils.createTextFileInDir(
+                    this,
+                    currentSelectedFolderUri!!,
+                    "paste",
+                    "txt",
+                    textToPaste
+                )
                 if (file != null && file.exists()) {
-                    Toast.makeText(this, getString(R.string.text_pasted_to_file, file.name), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.text_pasted_to_file, file.name),
+                        Toast.LENGTH_SHORT
+                    ).show()
                     viewModel.loadFiles(currentSelectedFolderUri!!)
                 } else {
-                    Toast.makeText(this, getString(R.string.failed_to_paste_text), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.failed_to_paste_text),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             } else {
                 Toast.makeText(this, getString(R.string.clipboard_empty), Toast.LENGTH_SHORT).show()
             }
         } else {
-            Toast.makeText(this, getString(R.string.no_text_in_clipboard), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.no_text_in_clipboard), Toast.LENGTH_SHORT)
+                .show()
         }
     }
 
@@ -513,14 +611,17 @@ class MainActivity : AppCompatActivity() {
                 pasteClipboardContent()
                 true
             }
+
             R.id.action_settings -> {
                 startActivity(Intent(this, SettingsActivity::class.java))
                 true
             }
+
             R.id.action_about -> {
                 startActivity(Intent(this, AboutActivity::class.java))
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -530,7 +631,7 @@ class MainActivity : AppCompatActivity() {
         // Reload files if the folder URI might have changed in Settings
         val prefs = getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
         val folderUriString = prefs.getString(Constants.EXTRA_FOLDER_URI, null)
-        val newUri = folderUriString?.let { Uri.parse(it) }
+        val newUri = folderUriString?.toUri()
 
         if (newUri != null && newUri != currentSelectedFolderUri) {
             Log.d("MainActivity", "Shared folder URI has changed. Restarting server.")
@@ -553,7 +654,7 @@ class MainActivity : AppCompatActivity() {
         // This is important if the service is still running and we want to reconnect.
         if (!isServiceBound && fileServerService == null) { // Check fileServerService too to avoid re-binding if already attempting
             Intent(this, FileServerService::class.java).also { intent ->
-                bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+                bindService(intent, serviceConnection, BIND_AUTO_CREATE)
             }
         }
     }
@@ -569,7 +670,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 unbindService(serviceConnection)
             } catch (e: IllegalArgumentException) {
-                 Log.e("MainActivity", "Service not registered or already unbound: ${e.message}")
+                Log.e("MainActivity", "Service not registered or already unbound: ${e.message}")
             }
             isServiceBound = false
         }
