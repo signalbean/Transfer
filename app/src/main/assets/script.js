@@ -345,4 +345,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load of files when the page is ready
     fetchFiles();
-}); c
+});
