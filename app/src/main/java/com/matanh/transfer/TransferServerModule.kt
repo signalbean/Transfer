@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import io.ktor.http.*
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
 import io.ktor.serialization.kotlinx.json.*
@@ -21,7 +22,9 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.*
 import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.copyTo
+import io.ktor.utils.io.writeFully
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -77,50 +80,52 @@ suspend fun handleFileDownload(
     baseDocumentFile: DocumentFile,
     fileNameEncoded: String
 ) {
-    // 1) URL Decode filename
+    // 1. URL Decode filename
     val fileName = try {
         URLDecoder.decode(fileNameEncoded, "UTF-8")
     } catch (e: Exception) {
         return call.respond(HttpStatusCode.BadRequest, "Invalid file name encoding.")
     }
-    // 2) Locate & validate
+    // 2. Locate & validate
     val target = baseDocumentFile.findFile(fileName)
     if (target == null || !target.isFile || !target.canRead()) {
         return call.respond(HttpStatusCode.NotFound, "File not found: $fileName")
     }
-    // 3) Determine mime & optional length
+    // 3. Determine mime & optional length
     val mime = ContentType.parse(target.type ?: ContentType.Application.OctetStream.toString())
     val length = target.length().takeIf { it > 0L }
-    // 4) Set headers *before* streaming
-    call.response.header(
-        HttpHeaders.ContentDisposition,
-        ContentDisposition.Attachment
-            .withParameter(ContentDisposition.Parameters.FileName, fileName)
-            .toString()
-    )
-    length?.let {
-        call.response.header(HttpHeaders.ContentLength, it.toString())
-    }
 
-    // 5. Open the Android stream once
+    // 4. Open the Android stream once
     val inputStream = context.contentResolver.openInputStream(target.uri)
         ?: return call.respond(HttpStatusCode.InternalServerError, "Could not open file stream.")
 
-    // 6. Stream it out with a big buffer and proper context switching
+    // 5. Respond with full control over headers & streaming - should be fast.
     try {
-        call.respondOutputStream(mime, HttpStatusCode.OK) {
-            withContext(Dispatchers.IO) {
-                val buf = ByteArray(64 * 1024)
-                while (true) {
-                    val read = inputStream.read(buf)
-                    if (read < 0) break
-                    write(buf, 0, read)  // 'this' is the OutputStream
+        call.respond(object : OutgoingContent.WriteChannelContent() {
+            override val contentType: ContentType = mime
+            override val contentLength: Long? = length
+            override val headers: Headers = headersOf(
+                HttpHeaders.ContentDisposition,
+                ContentDisposition.Attachment
+                    .withParameter(ContentDisposition.Parameters.FileName, fileName)
+                    .toString()
+            )
+
+            override suspend fun writeTo(channel: ByteWriteChannel) {
+                // Stream in a single IO-optimized coroutine
+                withContext(Dispatchers.IO) {
+                    inputStream.use { stream ->
+                        val buffer = ByteArray(256 * 1024) // 256 KB chunks
+                        while (true) {
+                            val bytesRead = stream.read(buffer)
+                            if (bytesRead == -1) break
+                            channel.writeFully(buffer, 0, bytesRead)
+                        }
+                    }
                 }
-                // flush any remaining bytes
-                flush()
             }
-        }
-    } catch (e: Exception) {
+        })
+} catch (e: Exception) {
         Log.e(TAG_KTOR_MODULE, "Error streaming file $fileName", e)
         call.respond(HttpStatusCode.InternalServerError, "Error serving file: ${e.localizedMessage}")
     } finally {
