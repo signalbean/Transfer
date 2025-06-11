@@ -60,6 +60,14 @@ Yes, you can set a [static IP](https://junipersys.com/support/article/14695) on 
 ### Can I use Transfer without an internet connection?
 Yes, Transfer works over your local Wi-Fi network, so an internet connection is not required. However, all devices must be connected to the same local network.
 
+### Do you have good UI?
+Dark mode (available in light and dark):
+
+![dark mode screenshot](data/dark_mode.png)
+
+Web interface (available in light and dark):
+![web UI screenshot](data/web-interface.png)
+
 ## Contributing
 
 Any contributions, bugs, or feedback are welcome!
