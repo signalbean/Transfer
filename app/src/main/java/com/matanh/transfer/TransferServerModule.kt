@@ -147,16 +147,11 @@ suspend fun handleFileUpload(
     [\\/] - Path separators
      */
 
-    var targetFileDoc = baseDocumentFile.findFile(sanitizedFileName)
-    var counter = 1
-    var uniqueFileName = sanitizedFileName
-    while (targetFileDoc != null && targetFileDoc.exists()) {
-        val nameWithoutExt = sanitizedFileName.substringBeforeLast('.', sanitizedFileName)
-        val extension = sanitizedFileName.substringAfterLast('.', "")
-        uniqueFileName = if (extension.isNotEmpty()) "$nameWithoutExt($counter).$extension" else "$nameWithoutExt($counter)"
-        targetFileDoc = baseDocumentFile.findFile(uniqueFileName)
-        counter++
-    }
+    // 2. Generate a unique filename
+    val nameWithoutExt = sanitizedFileName.substringBeforeLast('.', sanitizedFileName)
+    val extension = sanitizedFileName.substringAfterLast('.', "")
+    val uniqueFileName = Utils.generateUniqueFileName(baseDocumentFile, nameWithoutExt,extension)
+
 
     // 3. Determine effective MIME type and create the target file
     val effectiveMimeType = mimeType ?: ContentType.Application.OctetStream.toString()
@@ -345,7 +340,7 @@ fun Application.transferServerModule(
                         multipart.forEachPart { part ->
                             when (part) {
                                 is PartData.FileItem -> {
-                                    val originalFileName = part.originalFileName ?: "unknown_upload_${System.currentTimeMillis()}"
+                                    val originalFileName = part.originalFileName ?: "uploaded_file"
                                     Log.d(TAG_KTOR_MODULE, "Receiving file: $originalFileName")
                                     val (fileName, error) = handleFileUpload(
                                         context = applicationContext,
@@ -412,6 +407,12 @@ fun Application.transferServerModule(
                     call.respond(HttpStatusCode.BadRequest, "Filename missing in path for PUT.")
                     return@put
                 }
+                // handle simple override
+                val targetFileDoc = baseDocumentFile.findFile(fileName)
+                if (targetFileDoc != null && targetFileDoc.exists()) {
+                    targetFileDoc.delete()
+                }
+
                 val (uploadedFileName, error) = handleFileUpload(
                     context = applicationContext,
                     baseDocumentFile = baseDocumentFile,

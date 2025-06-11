@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.net.wifi.WifiManager
 import android.provider.OpenableColumns
+import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import java.math.BigInteger
 import java.net.InetAddress
@@ -55,21 +56,37 @@ object Utils {
         }
         return name ?: "unknown_file"
     }
+    fun generateUniqueFileName(docDir: DocumentFile, name: String, extension: String,startFromOne:Boolean=false): String {
+        // If we’re not starting from 1, try the plain name first:
+        if (!startFromOne) {
+            val plainName = "$name.$extension"
+            if (docDir.findFile(plainName) == null) {
+                return plainName
+            }
+        }
+        var count = if (startFromOne) 1 else 2
+        var candidate: String
 
-    fun copyUriToAppDir(context: Context, sourceUri: Uri, destinationDirUri: Uri, filename: String? = null): DocumentFile? {
+        do {
+            candidate = "${name}_$count.$extension"
+            count++
+        } while (docDir.findFile(candidate) != null)
+
+        return candidate
+
+    }
+
+    fun copyUriToAppDir(context: Context, sourceUri: Uri, destinationDirUri: Uri, filename: String): DocumentFile? {
         val resolver = context.contentResolver
         val docDir = DocumentFile.fromTreeUri(context, destinationDirUri) ?: return null
-        val targetFileName = filename ?: getFileName(context, sourceUri) ?: "file_${System.currentTimeMillis()}"
+
+        val nameWithoutExt = filename.substringBeforeLast(".")
+        val ext = filename.substringAfterLast(".", "")
+
 
         // Check if file exists, if so, create a unique name
-        var finalFileName = targetFileName
-        var count = 1
-        while (docDir.findFile(finalFileName) != null) {
-            val nameWithoutExt = targetFileName.substringBeforeLast(".")
-            val ext = targetFileName.substringAfterLast(".", "")
-            finalFileName = if (ext.isEmpty()) "${nameWithoutExt}_$count" else "${nameWithoutExt}_$count.$ext"
-            count++
-        }
+        var finalFileName = generateUniqueFileName(docDir, nameWithoutExt, ext)
+
 
         val MimeType = resolver.getType(sourceUri) ?: "application/octet-stream"
         val newFile = docDir.createFile(MimeType, finalFileName) ?: return null
@@ -88,14 +105,14 @@ object Utils {
         return null
     }
 
-    fun createTextFileInDir(context: Context, dirUri: Uri, fileName: String, content: String): DocumentFile? {
+    fun createTextFileInDir(context: Context, dirUri: Uri, name: String,ext:String, content: String): DocumentFile? {
+        // used from share text, from paste text
+
         val docDir = DocumentFile.fromTreeUri(context, dirUri) ?: return null
-        // Overwrite if exists for simplicity, or implement unique naming
-        var targetFile = docDir.findFile(fileName)
-        if (targetFile != null && targetFile.exists()) {
-            targetFile.delete()
-        }
-        targetFile = docDir.createFile("text/plain", fileName) ?: return null
+        var fileName = generateUniqueFileName(docDir, name, ext,true)
+
+
+        val targetFile = docDir.createFile("text/plain", fileName) ?: return null
         try {
             context.contentResolver.openOutputStream(targetFile.uri)?.use { outputStream ->
                 outputStream.writer().use { it.write(content) }

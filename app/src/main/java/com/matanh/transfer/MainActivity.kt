@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity() {
                 return@registerForActivityResult
             }
             val fileName = Utils.getFileName(this, sourceUri)
-            val copiedFile = Utils.copyUriToAppDir(this, sourceUri, currentSelectedFolderUri!!, fileName)
+            val copiedFile = Utils.copyUriToAppDir(this, sourceUri, currentSelectedFolderUri!!, fileName?:"upload.txt")
             if (copiedFile != null && copiedFile.exists()) {
                 Toast.makeText(this, getString(R.string.file_uploaded, copiedFile.name), Toast.LENGTH_SHORT).show()
                 viewModel.loadFiles(currentSelectedFolderUri!!)
@@ -272,11 +272,10 @@ class MainActivity : AppCompatActivity() {
         val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
         if (sharedText.isNullOrEmpty() || currentSelectedFolderUri == null) return
 
-        val fileName = "share_${System.currentTimeMillis()}.txt"
-        val file = Utils.createTextFileInDir(this, currentSelectedFolderUri!!, fileName, sharedText)
+        val file = Utils.createTextFileInDir(this, currentSelectedFolderUri!!, "share","txt", sharedText)
 
         if (file != null && file.exists()) {
-            Toast.makeText(this, getString(R.string.shared_text_saved, fileName), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.shared_text_saved, file.name), Toast.LENGTH_SHORT).show()
             viewModel.loadFiles(currentSelectedFolderUri!!)
         } else {
             Toast.makeText(this, R.string.error_saving_shared_content, Toast.LENGTH_SHORT).show()
@@ -287,7 +286,7 @@ class MainActivity : AppCompatActivity() {
         val fileUri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM) ?: return
         if (currentSelectedFolderUri == null) return
 
-        val fileName = Utils.getFileName(this, fileUri) ?: "file_${System.currentTimeMillis()}"
+        val fileName = Utils.getFileName(this, fileUri) ?: "shared_file"
         val copiedFile = Utils.copyUriToAppDir(this, fileUri, currentSelectedFolderUri!!, fileName)
 
         if (copiedFile != null && copiedFile.exists()) {
@@ -304,7 +303,7 @@ class MainActivity : AppCompatActivity() {
 
         var successCount = 0
         for (uri in uris) {
-            val fileName = Utils.getFileName(this, uri) ?: "file_${System.currentTimeMillis()}"
+            val fileName = Utils.getFileName(this, uri) ?: "file"
             if (Utils.copyUriToAppDir(this, uri, currentSelectedFolderUri!!, fileName) != null) {
                 successCount++
             }
@@ -484,10 +483,9 @@ class MainActivity : AppCompatActivity() {
             val item = clipboard.primaryClip?.getItemAt(0)
             val textToPaste = item?.text?.toString()
             if (!textToPaste.isNullOrEmpty()) {
-                val fileName = "paste_${System.currentTimeMillis()}.txt"
-                val file = Utils.createTextFileInDir(this, currentSelectedFolderUri!!, fileName, textToPaste)
+                val file = Utils.createTextFileInDir(this, currentSelectedFolderUri!!, "paste","txt", textToPaste)
                 if (file != null && file.exists()) {
-                    Toast.makeText(this, getString(R.string.text_pasted_to_file, fileName), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.text_pasted_to_file, file.name), Toast.LENGTH_SHORT).show()
                     viewModel.loadFiles(currentSelectedFolderUri!!)
                 } else {
                     Toast.makeText(this, getString(R.string.failed_to_paste_text), Toast.LENGTH_SHORT).show()
@@ -515,7 +513,6 @@ class MainActivity : AppCompatActivity() {
                 pasteClipboardContent()
                 true
             }
-            // R.id.action_upload removed as it's now a FAB
             R.id.action_settings -> {
                 startActivity(Intent(this, SettingsActivity::class.java))
                 true
