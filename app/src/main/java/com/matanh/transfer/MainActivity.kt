@@ -44,6 +44,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var fileAdapter: FileAdapter
     private lateinit var fabUpload: FloatingActionButton
     private lateinit var viewStatusIndicator: View
+    private lateinit var tvNoFilesMessage: TextView
 
     private var fileServerService: FileServerService? = null
     private var isServiceBound = false
@@ -159,6 +160,7 @@ class MainActivity : AppCompatActivity() {
         rvFiles = findViewById(R.id.rvFiles)
         fabUpload = findViewById(R.id.fabUpload)
         viewStatusIndicator = findViewById(R.id.viewStatusIndicator)
+        tvNoFilesMessage = findViewById(R.id.tvNoFilesMessage) // Initialize the new TextView
     }
 
     private fun setupClickListeners() {
@@ -201,6 +203,14 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.files.observe(this) { files ->
             fileAdapter.updateFiles(files)
+            if (files.isEmpty()) {
+                tvNoFilesMessage.visibility = View.VISIBLE
+                rvFiles.visibility = View.GONE
+            } else {
+                tvNoFilesMessage.visibility = View.GONE
+                rvFiles.visibility = View.VISIBLE
+            }
+
         }
         viewModel.selectedFolderUri.observe(this) { uri ->
             uri?.let {

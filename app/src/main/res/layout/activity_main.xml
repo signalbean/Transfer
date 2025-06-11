@@ -113,7 +113,22 @@ tools:listitem="@layout/item_file"
 android:background="?android:attr/colorBackground" 
     android:contentDescription="@string/file_list_description" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    <TextView
+        android:id="@+id/tvNoFilesMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/no_files_in_shared_folder"
+        android:textSize="18sp"
+        android:textColor="?android:attr/textColorSecondary"
+        app:layout_constraintTop_toBottomOf="@id/cardServerControls"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_bias="0.3"
+        android:visibility="gone"
+        tools:visibility="visible"
+        />
+</androidx.constraintlayout.widget.ConstraintLayout>
 
 <com.google.android.material.floatingactionbutton.FloatingActionButton
 android:id="@+id/fabUpload"
