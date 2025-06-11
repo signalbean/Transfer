@@ -8,12 +8,13 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
 import android.view.animation.AnimationUtils
 import android.widget.TextView
 import android.widget.Toast
-import com.google.android.material.button.MaterialButton
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
+import com.google.android.material.button.MaterialButton
+
 
 class AboutActivity : AppCompatActivity() {
     private var clickCount = 0
@@ -28,8 +29,9 @@ class AboutActivity : AppCompatActivity() {
         setContentView(R.layout.activity_about)
 
         // Setup Toolbar
+        setSupportActionBar(findViewById(R.id.toolbar))
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = ""
+//        supportActionBar?.title = ""
 
         // Set Version Name dynamically
         val versionTextView: TextView = findViewById(R.id.tvVersion)

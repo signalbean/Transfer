@@ -115,6 +115,7 @@
     <string name="version_name">T%d • Version %s • matan-h</string>
     <string name="app_logo_CD">app logo</string>
     <string name="about">About</string>
+    <string name="back_cd">back</string>
 
 
 </resources>
