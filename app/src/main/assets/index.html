@@ -26,8 +26,6 @@
         <div id="upload-progress-container">
             <!-- Upload progress items will be dynamically added here -->
         </div>
-        <!-- Manual upload button hidden, files are uploaded automatically on selection/drop -->
-        <!-- <button id="upload-button-manual" style="display:none;">Upload Selected</button> -->
     </section>
 
     <section id="files-section">
@@ -40,7 +38,7 @@
                     <th>Size</th>
                     <th>Last Modified</th>
                     <th>Type</th>
-                    <th>Actions</th>
+                    <th>Actions</th> <!-- Re-added Actions header -->
                 </tr>
                 </thead>
                 <tbody>
@@ -53,15 +51,19 @@
 </main>
 
 <footer>
-    <p>Transfer App &copy; 2024</p>
+    <p>Transfer App</p>
 </footer>
 
 <!-- Custom Confirmation Modal HTML -->
 <div id="confirmation-modal-overlay" class="modal-overlay">
     <div class="modal-content">
         <p id="confirmation-modal-message"></p>
+        <div class="modal-checkbox-container">
+            <input type="checkbox" id="do-not-ask-again">
+            <label for="do-not-ask-again">Don't ask me again</label>
+        </div>
         <div class="modal-buttons">
-            <button id="modal-confirm-button">Yes, Delete</button>
+            <button id="modal-confirm-button" class="delete-button">Delete</button>
             <button id="modal-cancel-button">Cancel</button>
         </div>
     </div>

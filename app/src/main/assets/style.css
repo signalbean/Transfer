@@ -110,7 +110,9 @@ header p {
 
 main {
     flex: 1;
-    max-width: 900px;
+    /* Adjusted max-width for more horizontal space */
+    max-width: 1200px;
+    /* Increased from 900px */
     margin: 2rem auto;
     padding: 0 1rem;
     width: 100%;
@@ -166,9 +168,8 @@ h2 {
     cursor: pointer;
 }
 
-/* Buttons */
-button,
-.action-button {
+/* General Button Style (used for modal and theme toggle) */
+button {
     background-color: var(--button-background);
     color: var(--button-text);
     border: none;
@@ -181,35 +182,9 @@ button,
     box-shadow: 0 2px 4px var(--shadow-light);
 }
 
-button:hover,
-.action-button:hover {
+button:hover {
     background-color: var(--primary-color);
     color: var(--white);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px var(--shadow-medium);
-}
-
-/* Download button specific styling to ensure it looks like a button */
-a.action-button {
-    text-decoration: none;
-    /* Remove underline from link */
-    display: inline-block;
-    /* Treat like a block element for padding */
-}
-
-.delete-button {
-    /* Updated to use button-background with error-color text */
-    background-color: var(--button-background);
-    color: var(--error-color);
-    /* Red text on button background */
-    margin-left: 0.5rem;
-}
-
-.delete-button:hover {
-    background-color: var(--error-color);
-    /* Red background on hover */
-    color: var(--white);
-    /* White text on red hover */
     transform: translateY(-2px);
     box-shadow: 0 4px 8px var(--shadow-medium);
 }
@@ -226,14 +201,55 @@ a.action-button {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.95rem;
+    table-layout: fixed;
+    /* Ensures columns respect widths */
 }
 
 #files-table th,
 #files-table td {
     text-align: left;
-    padding: 12px 15px;
+    padding: 10px 15px;
+    /* Reduced padding for compactness */
     border-bottom: 1px solid var(--divider-color);
+    /* Ensure text doesn't wrap and shows ellipsis if too long */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+
+/* Optimized column widths for a more spacious and readable table */
+#files-table th:nth-child(1),
+#files-table td:nth-child(1) {
+    width: 30%;
+}
+
+/* Name */
+#files-table th:nth-child(2),
+#files-table td:nth-child(2) {
+    width: 12%;
+}
+
+/* Size */
+#files-table th:nth-child(3),
+#files-table td:nth-child(3) {
+    width: 23%;
+}
+
+/* Last Modified */
+#files-table th:nth-child(4),
+#files-table td:nth-child(4) {
+    width: 20%;
+}
+
+/* Type */
+#files-table th:nth-child(5),
+#files-table td:nth-child(5) {
+    width: 15%;
+    text-align: right;
+}
+
+/* Actions */
+
 
 #files-table thead th {
     background-color: var(--primary-color);
@@ -252,7 +268,7 @@ a.action-button {
 #files-table tbody tr:hover {
     /* Using rgba with fallback for primary-color-rgb */
     background-color: rgba(25, 118, 210, 0.1);
-    /* Fallback for primary-color-rgb */
+    /* Stronger tint on hover */
 }
 
 #no-files-message {
@@ -264,6 +280,71 @@ a.action-button {
     border-radius: 8px;
     background-color: var(--card-background);
 }
+
+/* Action Icons (visible always) */
+.action-icons-container {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    /* Align icons to the right within the cell */
+    width: 100%;
+    /* Ensure container takes full width */
+}
+
+.icon-button {
+    background: none;
+    /* No background by default */
+    border: 1px solid transparent;
+    /* Transparent border for subtle hover effect */
+    border-radius: 6px;
+    padding: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease, color 0.2s ease;
+    color: var(--text-secondary);
+    /* Default icon color */
+    text-decoration: none;
+    /* For download links */
+}
+
+.icon-button:hover {
+    background-color: var(--button-background);
+    /* Subtle background on hover */
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.delete-button{
+background-color: var(--error-color);
+}
+
+.download-icon:hover {
+    color: var(--primary-color);
+    /* Download icon becomes primary color on hover */
+}
+
+.delete-icon:hover {
+    color: var(--error-color);
+    /* Delete icon becomes red on hover */
+    border-color: var(--error-color);
+}
+
+/* SVG icon styling */
+.icon-button svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    /* Inherit color from parent button */
+    stroke: currentColor;
+    /* For icons that use stroke */
+    stroke-width: 1.5;
+    /* Default stroke width for icons */
+    vertical-align: middle;
+    /* Align icons nicely with text if any */
+}
+
 
 /* Upload Progress */
 #upload-progress-container {
@@ -347,10 +428,12 @@ footer {
 
 .modal-content {
     background-color: var(--card-background);
-    padding: 2rem;
+    padding: 1.5rem;
+    /* Reduced padding */
     border-radius: 12px;
     box-shadow: 0 8px 20px var(--shadow-medium);
-    max-width: 400px;
+    max-width: 350px;
+    /* Reduced max-width for a more compact modal */
     width: 90%;
     text-align: center;
     transform: translateY(-20px);
@@ -362,10 +445,33 @@ footer {
 }
 
 .modal-content p {
-    font-size: 1.1rem;
-    margin-bottom: 1.5rem;
+    font-size: 1rem;
+    /* Slightly reduced font size */
+    margin-bottom: 1rem;
+    /* Reduced margin */
     color: var(--text-primary);
 }
+
+.modal-checkbox-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    /* Space before buttons */
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.modal-checkbox-container input[type="checkbox"] {
+    cursor: pointer;
+    width: 18px;
+    /* Standardize checkbox size */
+    height: 18px;
+    accent-color: var(--primary-color);
+    /* Native checkbox color */
+}
+
 
 .modal-buttons {
     display: flex;
@@ -400,15 +506,52 @@ footer {
 
     #files-table th,
     #files-table td {
-        padding: 10px;
+        padding: 8px 10px;
+        /* Further reduced for mobile */
         font-size: 0.85rem;
     }
 
-    button,
-    .action-button {
-        padding: 0.7rem 1.2rem;
-        font-size: 0.9rem;
+    .icon-button {
+        padding: 0.4rem;
+        /* Smaller icons on mobile */
     }
+
+    .icon-button svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Adjust column widths for smaller screens */
+    #files-table th:nth-child(1),
+    #files-table td:nth-child(1) {
+        width: 30%;
+    }
+
+    /* Name */
+    #files-table th:nth-child(2),
+    #files-table td:nth-child(2) {
+        width: 15%;
+    }
+
+    /* Size */
+    #files-table th:nth-child(3),
+    #files-table td:nth-child(3) {
+        width: 25%;
+    }
+
+    /* Last Modified */
+    #files-table th:nth-child(4),
+    #files-table td:nth-child(4) {
+        width: 15%;
+    }
+
+    /* Type */
+    #files-table th:nth-child(5),
+    #files-table td:nth-child(5) {
+        width: 15%;
+    }
+
+    /* Actions */
 }
 
 @media (max-width: 480px) {
@@ -446,4 +589,36 @@ footer {
     .modal-content p {
         font-size: 1rem;
     }
+
+    /* Further adjust column widths for very small screens */
+    #files-table th:nth-child(1),
+    #files-table td:nth-child(1) {
+        width: 28%;
+    }
+
+    /* Name */
+    #files-table th:nth-child(2),
+    #files-table td:nth-child(2) {
+        width: 18%;
+    }
+
+    /* Size */
+    #files-table th:nth-child(3),
+    #files-table td:nth-child(3) {
+        width: 22%;
+    }
+
+    /* Last Modified */
+    #files-table th:nth-child(4),
+    #files-table td:nth-child(4) {
+        width: 17%;
+    }
+
+    /* Type */
+    #files-table th:nth-child(5),
+    #files-table td:nth-child(5) {
+        width: 15%;
+    }
+
+    /* Actions */
 }

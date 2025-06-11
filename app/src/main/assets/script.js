@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmationModalMessage = document.getElementById('confirmation-modal-message');
     const modalConfirmButton = document.getElementById('modal-confirm-button');
     const modalCancelButton = document.getElementById('modal-cancel-button');
+    const doNotAskAgainCheckbox = document.getElementById('do-not-ask-again');
 
     // --- Theme Toggle ---
     function applyTheme(theme) {
@@ -29,8 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedTheme) {
         applyTheme(savedTheme);
     } else {
-        // Default to light mode if no preference saved
-        applyTheme('light');
+        // Detect system preference for dark or light mode
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyTheme(prefersDark ? 'dark' : 'light');
     }
 
     // Toggle theme on button click
@@ -52,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showConfirmModal(message, onConfirm) {
         confirmationModalMessage.textContent = message;
         currentConfirmCallback = onConfirm; // Store the callback
+        doNotAskAgainCheckbox.checked = false; // Reset checkbox state every time modal is opened
 
         confirmationModalOverlay.classList.add('active'); // Show modal
 
@@ -60,6 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
         modalCancelButton.onclick = null;
 
         modalConfirmButton.onclick = () => {
+            if (doNotAskAgainCheckbox.checked) {
+                localStorage.setItem('doNotAskAgainDelete', 'true'); // Set preference
+            }
             if (currentConfirmCallback) {
                 currentConfirmCallback(true);
             }
@@ -128,30 +134,59 @@ document.addEventListener('DOMContentLoaded', () => {
             row.insertCell().textContent = file.lastModified;
             row.insertCell().textContent = file.type;
 
+            // Add the action icons container to the last cell
             const actionsCell = row.insertCell();
+            actionsCell.style.textAlign = 'right'; // Align icons to the right
+
+            const actionIconsContainer = document.createElement('div');
+            actionIconsContainer.className = 'action-icons-container';
+
+            // Download Icon
             const downloadLink = document.createElement('a');
             downloadLink.href = file.downloadUrl;
-            downloadLink.textContent = 'Download';
-            downloadLink.className = 'action-button';
             downloadLink.setAttribute('download', file.name); // Suggest filename for download
-            actionsCell.appendChild(downloadLink);
+            downloadLink.className = 'icon-button download-icon';
+            downloadLink.title = `Download ${file.name}`;
+            downloadLink.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M12 16L7 11H11V4H13V11H17L12 16ZM20 18H4V20H20V18Z"/>
+                    </svg>
+                `;
+            actionIconsContainer.appendChild(downloadLink);
 
+            // Delete Icon
             const deleteButton = document.createElement('button');
-            deleteButton.innerHTML = 'Delete'; // Use innerHTML for potential icon if allowed, text for now
-            deleteButton.className = 'action-button delete-button';
+            deleteButton.className = 'icon-button delete-icon';
             deleteButton.title = `Delete ${file.name}`;
-            deleteButton.onclick = () => confirmDeleteFile(file.name);
-            actionsCell.appendChild(deleteButton);
+            deleteButton.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12ZM19 4h-3.5l-1-1h-5l-1 1H5V6h14V4Z"/>
+                    </svg>
+                `;
+            deleteButton.onclick = (event) => {
+                event.stopPropagation(); // Prevent row click from interfering if any
+                confirmDeleteFile(file.name);
+            };
+            actionIconsContainer.appendChild(deleteButton);
+
+            actionsCell.appendChild(actionIconsContainer);
         });
     }
 
-    function confirmDeleteFile(fileName) {
-        showConfirmModal(`Are you sure you want to delete "${fileName}"? This action cannot be undone.`, (confirmed) => {
-            if (confirmed) {
-                deleteFile(fileName);
+        function confirmDeleteFile(fileName) {
+            // Check localStorage preference first
+            const doNotAskAgain = localStorage.getItem('doNotAskAgainDelete') === 'true';
+
+            if (doNotAskAgain) {
+                deleteFile(fileName); // Proceed directly if preference is set
+            } else {
+                showConfirmModal(`Delete "${fileName}"?`, (confirmed) => { // Shorter message
+                    if (confirmed) {
+                        deleteFile(fileName);
+                    }
+                });
             }
-        });
-    }
+        }
 
     async function deleteFile(fileName) {
         try {
@@ -230,9 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function handleFiles(files) {
-        // Clear previous progress *only if* new files are selected/dropped
-        // Otherwise, new uploads just add to the list
-        // uploadProgressContainer.innerHTML = '';
         Array.from(files).forEach(file => {
             uploadFile(file);
         });
@@ -300,6 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {number} bytes The number of bytes.
      * @param {number} decimals The number of decimal places for the output.
      * @returns {string} Formatted size string.
+     * This is, of course, GPT. If you said you have more than 1TB, I won't believe you, and YB is a trillion TB. :)
      */
     function formatBytes(bytes, decimals = 2) {
         if (bytes === 0) return '0 Bytes';
@@ -312,4 +345,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load of files when the page is ready
     fetchFiles();
-});
+}); c
