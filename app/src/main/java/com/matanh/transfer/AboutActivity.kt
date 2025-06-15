@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
 import com.google.android.material.button.MaterialButton
+import timber.log.Timber
 
 
 class AboutActivity : AppCompatActivity() {
@@ -22,6 +23,7 @@ class AboutActivity : AppCompatActivity() {
     private val clickTimeout = 3000L // ms
     private val handler = Handler(Looper.getMainLooper())
     private val resetClickRunnable = Runnable { clickCount = 0 }
+    private val logger = Timber.tag("AboutActivity")
 
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -82,7 +82,9 @@ dependencies {
     implementation(libs.ktor.server.status.pages.jvm)
     implementation(libs.ktor.server.auth.jvm) // For Basic Auth
     implementation(libs.ktor.server.cors.jvm)
-    implementation(libs.ktor.server.call.logging.jvm) // Optional logging
+    implementation(libs.ktor.server.call.logging.jvm)
+    implementation(libs.timber)
+    implementation(libs.androidx.activity)
 
 
     testImplementation(libs.junit)

@@ -11,8 +11,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
+import timber.log.Timber
 
 class SetupActivity : AppCompatActivity() {
+    private val logger = Timber.tag("SetupActivity")
 
     private val selectFolderLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
@@ -44,7 +46,7 @@ class SetupActivity : AppCompatActivity() {
 
         if (!persistedUriString.isNullOrEmpty()) {
             val persistedUri = persistedUriString.toUri()
-            Log.d("SetupActivity", "Persisted URI: $persistedUri")
+            logger.d("Persisted URI: $persistedUri")
             // Check if permissions are still valid for the persisted URI
             if (Utils.isUriPermissionPersisted(this, persistedUri)) {
                 // Attempt to access the DocumentFile to further validate
@@ -69,7 +71,7 @@ class SetupActivity : AppCompatActivity() {
     }
 
     private fun launchMainActivity() {
-        Log.d("SetupActivity", "Launching MainActivity")
+        logger.d("Launching MainActivity")
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
         finish() // Finish SetupActivity so user can't go back to it

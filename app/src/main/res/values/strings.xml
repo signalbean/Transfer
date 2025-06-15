@@ -21,15 +21,12 @@
     <string name="no_write_permission">No write permission for the selected folder. Please re-select in settings.</string>
 
 
-
     <string name="shared_folder_not_selected">Shared folder not selected.</string>
     <string name="file_upload_failed">Failed to upload file.</string>
     <string name="select_shared_folder_prompt">Please select a shared folder in settings.</string>
     <string name="error_parsing_folder_uri">Error: Could not parse selected folder URI.</string>
     <string name="file_uploaded">File uploaded: %s</string>
     <string name="no_files_selected">No files selected.</string>
-
-
 
 
     <string name="text_pasted_to_file">Text pasted to %s</string>
@@ -61,13 +58,13 @@
     <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>
 
-<!--    SETUP-->
+    <!--    SETUP-->
     <string name="setup_title">Welcome to Transfer</string>
     <string name="setup_description">To get started, please select a folder on your device that will be used for sharing files.</string>
     <string name="choose_shared_folder">Choose Shared Folder</string>
     <string name="folder_setup_complete">Folder selected. Starting Transfer app.</string>
 
-<!--    file list-->
+    <!--    file list-->
     <string name="no_files_in_shared_folder">No files here. Upload some!</string>
     <string name="action_share_file">Share</string>
     <string name="action_delete_file">Delete</string>
@@ -78,7 +75,7 @@
     <string name="refreshing_files">Refreshing file list…</string>
 
 
-<!--    just for accesses-->
+    <!--    just for accesses-->
 
     <string name="file_type_icon">File type icon</string>
     <string name="selection_indicator">Selection indicator</string>
@@ -87,7 +84,7 @@
     <string name="selected_items_count">%d selected</string>
     <string name="action_select_all">Select All</string>
     <string name="upload_file">Upload File</string>
-<!--    main UI-->
+    <!--    main UI-->
     <string name="server_status_placeholder">Server Status</string>
     <string name="copy_ip_description">Copy IP Address</string>
     <string name="file_list_description">List of shared files</string>
@@ -116,6 +113,9 @@
     <string name="app_logo_CD">app logo</string>
     <string name="about">About</string>
     <string name="back_cd">back</string>
+    <string name="report_error_title">Report Bug/Error</string>
+    <string name="copy_to_clipboard">Copy to Clipboard</string>
+    <string name="open_github_issue">Open GitHub Issue</string>
 
 
 </resources>

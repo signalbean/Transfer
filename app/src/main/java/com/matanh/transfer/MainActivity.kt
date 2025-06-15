@@ -33,6 +33,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
 
@@ -52,6 +53,7 @@ class MainActivity : AppCompatActivity() {
     private val ipPermissionDialogs = mutableMapOf<String, AlertDialog>()
 
     private var actionMode: ActionMode? = null
+    private val logger = Timber.tag("MainActivity")
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -147,7 +149,7 @@ class MainActivity : AppCompatActivity() {
         // finish()
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleShareIntent(intent)
     }
@@ -631,6 +633,10 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, AboutActivity::class.java))
                 true
             }
+            R.id.action_report_error -> {
+                startActivity(Intent(this, ReportErrorActivity::class.java))
+                true
+            }
 
             else -> super.onOptionsItemSelected(item)
         }
@@ -644,7 +650,7 @@ class MainActivity : AppCompatActivity() {
         val newUri = folderUriString?.toUri()
 
         if (newUri != null && newUri != currentSelectedFolderUri) {
-            Log.d("MainActivity", "Shared folder URI has changed. Restarting server.")
+            logger.d("Shared folder URI has changed. Restarting server.")
             currentSelectedFolderUri = newUri
             viewModel.setSelectedFolderUri(newUri) // Update the UI
             startFileServer(newUri) // Explicitly tell the service to restart with the new URI
@@ -680,7 +686,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 unbindService(serviceConnection)
             } catch (e: IllegalArgumentException) {
-                Log.e("MainActivity", "Service not registered or already unbound: ${e.message}")
+                logger.e("Service not registered or already unbound: ${e.message}")
             }
             isServiceBound = false
         }

@@ -2,7 +2,6 @@ package com.matanh.transfer
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import io.ktor.http.ContentDisposition
 import io.ktor.http.ContentType
@@ -52,6 +51,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.json.JSONObject
+import timber.log.Timber
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.channels.Channels
@@ -61,6 +61,7 @@ import java.util.Locale
 import java.util.TimeZone
 
 const val TAG_KTOR_MODULE = "TransferKtorModule"
+private val logger = Timber.tag(TAG_KTOR_MODULE)
 
 // --- Custom Plugins (CurlDetectorPlugin, IpAddressApprovalPlugin) ---
 private val IsCurlRequestKey = AttributeKey<Boolean>("IsCurlRequestKey")
@@ -78,20 +79,20 @@ val IpAddressApprovalPlugin = createApplicationPlugin(name = "IpAddressApprovalP
     val serviceProvider = application.attributes[KEY_SERVICE_PROVIDER]
     onCall { call ->
         val service = serviceProvider() ?: run {
-            Log.e(TAG_KTOR_MODULE, "FileServerService not available to IPAddressApprovalPlugin")
+            logger.e("FileServerService not available to IPAddressApprovalPlugin")
             call.respond(HttpStatusCode.InternalServerError, "Server configuration error.")
             return@onCall
         }
         val clientIp = call.request.origin.remoteHost
-        Log.d(TAG_KTOR_MODULE, "IP Approval: Checking IP $clientIp")
+        logger.d("IP Approval: Checking IP $clientIp")
         if (service.isIpPermissionRequired()) {
             val approved = service.requestIpApprovalFromClient(clientIp)
             if (!approved) {
-                Log.w(TAG_KTOR_MODULE, "IP Approval: IP $clientIp denied access.")
+                logger.w("IP Approval: IP $clientIp denied access.")
                 call.respond(HttpStatusCode.Forbidden, "Access denied by host device.")
                 return@onCall
             } else {
-                Log.d(TAG_KTOR_MODULE, "IP Approval: IP $clientIp approved.")
+                logger.d("IP Approval: IP $clientIp approved.")
             }
         }
     }
@@ -151,7 +152,7 @@ suspend fun handleFileDownload(
             }
         })
     } catch (e: Exception) {
-        Log.e(TAG_KTOR_MODULE, "Error streaming file $fileName", e)
+        logger.e("Error streaming file $fileName")
         call.respond(
             HttpStatusCode.InternalServerError,
             "Error serving file: ${e.localizedMessage}"
@@ -190,7 +191,7 @@ suspend fun handleFileUpload(
     val effectiveMimeType = mimeType ?: ContentType.Application.OctetStream.toString()
     val newFileDoc = baseDocumentFile.createFile(effectiveMimeType, uniqueFileName)
     if (newFileDoc == null || !newFileDoc.canWrite()) {
-        Log.e(TAG_KTOR_MODULE, "Failed to create document file for upload: $uniqueFileName")
+        logger.e("Failed to create document file for upload: $uniqueFileName")
         return null to "Failed to create file."
     }
     // 5) Stream upload with a buffer
@@ -202,12 +203,12 @@ suspend fun handleFileUpload(
             byteReadChannel.copyTo(channel)
         } ?: throw Exception("Cannot open output stream for ${newFileDoc.uri}")
 
-        Log.i(TAG_KTOR_MODULE, "File '$uniqueFileName' uploaded successfully.")
+        logger.i("File '$uniqueFileName' uploaded successfully.")
         notifyService()
         return uniqueFileName to null
     } catch (e: Exception) {
         newFileDoc.delete() // Clean up
-        Log.e(TAG_KTOR_MODULE, "Error during file upload: $uniqueFileName", e)
+        logger.e("Error during file upload: $uniqueFileName")
         return null to e.localizedMessage
     }
 }
@@ -228,11 +229,11 @@ fun handleFileDelete(
         return false to "File not found: $decodedFileName"
     }
     return if (fileToDeleteDoc.delete()) {
-        Log.i(TAG_KTOR_MODULE, "File deleted successfully: $decodedFileName")
+        logger.i("File deleted successfully: $decodedFileName")
         notifyService()
         true to null
     } else {
-        Log.e(TAG_KTOR_MODULE, "Failed to delete file: $decodedFileName")
+        logger.e("Failed to delete file: $decodedFileName")
         false to "Failed to delete file: $decodedFileName"
     }
 }
@@ -261,7 +262,7 @@ fun Application.transferServerModule(
     install(CallLogging)
     install(StatusPages) {
         exception<Throwable> { call, cause ->
-            Log.e(TAG_KTOR_MODULE, "Unhandled error: ${cause.localizedMessage}", cause)
+            logger.e("Unhandled error: ${cause.localizedMessage}")
             call.respondText(
                 text = "500: ${cause.localizedMessage}",
                 status = HttpStatusCode.InternalServerError
@@ -360,10 +361,10 @@ fun Application.transferServerModule(
                                     }"
                                 )
                             }
-                        Log.d(TAG_KTOR_MODULE, "Files list: $filesList")
+                        logger.d("Files list: $filesList")
                         call.respond(FileListResponse(filesList))
                     } catch (e: Exception) {
-                        Log.e(TAG_KTOR_MODULE, "Error listing files", e)
+                        logger.e("Error listing files")
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ErrorResponse("Error listing files: ${e.localizedMessage}")
@@ -388,7 +389,7 @@ fun Application.transferServerModule(
                             when (part) {
                                 is PartData.FileItem -> {
                                     val originalFileName = part.originalFileName ?: "uploaded_file"
-                                    Log.d(TAG_KTOR_MODULE, "Receiving file: $originalFileName")
+                                    logger.d("Receiving file: $originalFileName")
                                     val (fileName, error) = handleFileUpload(
                                         context = applicationContext,
                                         baseDocumentFile = baseDocumentFile,
@@ -401,18 +402,12 @@ fun Application.transferServerModule(
                                         uploadedFileNames.add(fileName)
                                         filesUploadedCount++
                                     } else {
-                                        Log.e(
-                                            TAG_KTOR_MODULE,
-                                            "Upload failed for $originalFileName: $error"
-                                        )
+                                        logger.e("Upload failed for $originalFileName: $error")
                                     }
                                 }
 
                                 is PartData.FormItem -> {
-                                    Log.d(
-                                        TAG_KTOR_MODULE,
-                                        "Form item: ${part.name} = ${part.value}"
-                                    )
+                                    logger.d("Form item: ${part.name} = ${part.value}")
                                 }
 
                                 else -> {}
@@ -434,7 +429,7 @@ fun Application.transferServerModule(
                             )
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG_KTOR_MODULE, "Exception during file upload", e)
+                        logger.e("Exception during file upload")
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             "Upload error: ${e.localizedMessage}"
@@ -471,7 +466,7 @@ fun Application.transferServerModule(
                             )
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG_KTOR_MODULE, "Error processing delete request", e)
+                        logger.e("Error processing delete request")
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ErrorResponse("Server error during delete: ${e.localizedMessage}")

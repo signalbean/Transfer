@@ -17,4 +17,8 @@
         android:id="@+id/action_about"
         android:title="@string/about"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_report_error"
+        android:title="@string/report_error_title"
+        />
 </menu>

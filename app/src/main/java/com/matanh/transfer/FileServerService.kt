@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 data class IpPermissionRequest(val ipAddress: String, val deferred: CompletableDeferred<Boolean>)
 
@@ -68,7 +69,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
     }
 
     companion object {
-        private const val TAG = "FileServerServiceKtor"
+        private val logger = Timber.tag("FileServerServiceKtor")
     }
 
     override fun onCreate() {
@@ -76,7 +77,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
         sharedPreferences.registerOnSharedPreferenceChangeListener(this) // track changes
         createNotificationChannel()
-        Log.d(TAG, "FileServerService onCreate")
+        logger.d("FileServerService onCreate")
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
@@ -87,7 +88,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
         if (key == passwordKey || key == ipPermissionKey) {
             // Only restart if the server is currently running
             if (ktorServer != null) {
-                Log.i(TAG, "A server setting changed. Restarting Ktor server.")
+                logger.i("A server setting changed. Restarting Ktor server.")
                 startKtorServer() // The restart is now handled by startKtorServer
             }
         }
@@ -101,7 +102,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "onStartCommand: ${intent?.action}")
+        logger.d("onStartCommand: ${intent?.action}")
         when (intent?.action) {
             Constants.ACTION_START_SERVICE -> {
                 val folderUriString = intent.getStringExtra(Constants.EXTRA_FOLDER_URI)
@@ -109,7 +110,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
                     currentSharedFolderUri = folderUriString.toUri()
                     startKtorServer()
                 } else {
-                    Log.e(TAG, "Folder URI missing, stopping service")
+                    logger.e("Folder URI missing, stopping service")
                     _serverState.value = ServerState.Error("Folder URI missing.")
                     stopSelf()
                 }
@@ -129,13 +130,13 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
 
             // If the server is already running, stop it first.
             if (ktorServer != null) {
-                Log.i(TAG, "Stopping existing Ktor server for restart...")
+                logger.i("Stopping existing Ktor server for restart...")
                 ktorServer?.stop(500, 1000) // Gracefully stop the server
                 ktorServer = null
             }
 
             if (currentSharedFolderUri == null) {
-                Log.e(TAG, "Cannot start server: shared folder URI is null.")
+                logger.e("Cannot start server: shared folder URI is null.")
                 _serverState.value = ServerState.Error("Shared folder not set.")
                 stopSelf()
                 return@launch
@@ -144,7 +145,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
             val baseDocFile =
                 DocumentFile.fromTreeUri(this@FileServerService, currentSharedFolderUri!!)
             if (baseDocFile == null || !baseDocFile.canRead()) {
-                Log.e(TAG, "Cannot start server: shared folder URI is not accessible or readable.")
+                logger.e("Cannot start server: shared folder URI is not accessible or readable.")
                 _serverState.value = ServerState.Error("Shared folder not accessible.")
                 stopSelf()
                 return@launch
@@ -155,7 +156,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
                 val ipAddress = Utils.getLocalIpAddress(this@FileServerService)
                 if (ipAddress == null) {
                     _serverState.value = ServerState.Error("Wi-Fi not connected or IP not found.")
-                    Log.e(TAG, "Failed to get local IP address.")
+                    logger.e("Failed to get local IP address.")
                     stopSelf() // Stop service if IP cannot be obtained
                     return@launch
                 }
@@ -175,11 +176,11 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
                     }
 
                 _serverState.value = ServerState.Running(ipAddress, Constants.SERVER_PORT)
-                Log.i(TAG, "Ktor Server started on $ipAddress:${Constants.SERVER_PORT}")
+                logger.i("Ktor Server started on $ipAddress:${Constants.SERVER_PORT}")
                 startForeground(Constants.NOTIFICATION_ID, createNotification())
 
             } catch (e: Exception) { // Catch broader exceptions during server setup/start
-                Log.e(TAG, "Error starting Ktor server", e)
+                logger.e(e)
                 _serverState.value =
                     ServerState.Error("Failed to start server: ${e.localizedMessage}")
                 ktorServer?.stop(1000, 2000) // Attempt to stop if partially started
@@ -194,11 +195,11 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
             try {
                 ktorServer?.stop(1000, 2000) // Grace period and timeout
             } catch (e: Exception) {
-                Log.e(TAG, "Exception while stopping Ktor server", e)
+                logger.e("Exception while stopping Ktor server")
             } finally {
                 ktorServer = null
                 _serverState.value = ServerState.Stopped
-                Log.i(TAG, "Ktor Server stopped.")
+                logger.i("Ktor Server stopped.")
                 stopForeground(STOP_FOREGROUND_REMOVE)
             }
         }
@@ -213,7 +214,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
     }
 
     suspend fun requestIpApprovalFromClient(ipAddress: String): Boolean {
-        Log.d(TAG, "Requesting IP approval from $ipAddress")
+        logger.d("Requesting IP approval from $ipAddress")
 
         // Clean up expired IPs
         val now = System.currentTimeMillis()
@@ -311,7 +312,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
     override fun onBind(intent: Intent): IBinder = binder
 
     override fun onDestroy() {
-        Log.d(TAG, "FileServerService onDestroy")
+        logger.d("FileServerService onDestroy")
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
         stopKtorServer() // Ensure server is stopped
         serviceJob.cancel() // Cancel all coroutines in this scope
