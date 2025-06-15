@@ -1,0 +1,1 @@
+fix limit of 50MB on form upload [#3], add an activity to report errors
