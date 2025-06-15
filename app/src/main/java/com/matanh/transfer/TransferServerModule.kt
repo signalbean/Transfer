@@ -383,7 +383,7 @@ fun Application.transferServerModule(
                     var filesUploadedCount = 0
                     val uploadedFileNames = mutableListOf<String>()
                     try {
-                        val multipart = call.receiveMultipart()
+                        val multipart = call.receiveMultipart(formFieldLimit = Long.MAX_VALUE) // allow more then 50MB (#3)
                         multipart.forEachPart { part ->
                             when (part) {
                                 is PartData.FileItem -> {
