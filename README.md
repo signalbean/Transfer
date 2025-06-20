@@ -2,7 +2,16 @@
 
 A simple local file server app for Android. Download and upload files quickly across devices over Wi-Fi — no cables, no cloud.
 
-![screenshot of the app](data/screenshot_rect3.png)
+<table>
+  <tr>
+    <td><img src="screenshots/result/01.png" /></td>
+    <td><img src="screenshots/result/02.png" /></td>
+    <td><img src="screenshots/result/03.png" /></td>
+    <td><img src="screenshots/result/04.png" /></td>
+    <td><img src="screenshots/result/05.png" /></td>
+    <td><img src="screenshots/result/06.png" /></td>
+  </tr>
+</table>
 
 Transfer makes sharing files across your local network incredibly straightforward. Think of it as a temporary USB stick you can access from any computer or device with a web browser — but without the physical stick, powered by a clean and simple UI.
 
