@@ -16,6 +16,9 @@
 
     <string name="file_server_notification_title">Transfer Server Active</string>
     <string name="file_server_notification_text">Access files at http://%s:%d</string>
+    <string name="notification_permission_denied">Notification permission denied</string>
+
+
     <string name="notification_channel_name">File Server</string>
     <string name="notification_channel_description">Shows when the Transfer server is running.</string>
     <string name="no_write_permission">No write permission for the selected folder. Please re-select in settings.</string>
