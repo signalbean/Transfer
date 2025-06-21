@@ -4,12 +4,14 @@ A simple local file server app for Android. Download and upload files quickly ac
 
 <table>
   <tr>
-    <td><img src="screenshots/result/01.png" /></td>
-    <td><img src="screenshots/result/02.png" /></td>
-    <td><img src="screenshots/result/03.png" /></td>
-    <td><img src="screenshots/result/04.png" /></td>
-    <td><img src="screenshots/result/05.png" /></td>
-    <td><img src="screenshots/result/06.png" /></td>
+    <td>
+    	<img src="screenshots/result/01.png" />
+    	<img src="screenshots/result/02.png" />
+    	<img src="screenshots/result/03.png" />
+    	<img src="screenshots/result/04.png" />
+    	<img src="screenshots/result/05.png" />
+    	<img src="screenshots/result/06.png" />
+    </td>
   </tr>
 </table>
 
