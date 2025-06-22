@@ -119,6 +119,7 @@
     <string name="report_error_title">Report Bug/Error</string>
     <string name="copy_to_clipboard">Copy to Clipboard</string>
     <string name="open_github_issue">Open GitHub Issue</string>
+    <string name="stop_server">Stop Server</string>
 
 
 </resources>

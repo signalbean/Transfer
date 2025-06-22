@@ -287,6 +287,17 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
         val pendingIntent =
             PendingIntent.getActivity(this, 0, notificationIntent, pendingIntentFlags)
 
+        // add stop button the the notification
+        val stopIntent = Intent(this, FileServerService::class.java).apply {
+            action = Constants.ACTION_STOP_SERVICE
+        }
+        val stopPendingIntent = PendingIntent.getService(
+            this,
+            0,
+            stopIntent,
+            pendingIntentFlags
+        )
+
         val ipAddress =
             (_serverState.value as? ServerState.Running)?.ip ?: Utils.getLocalIpAddress(this)
             ?: "N/A"
@@ -298,6 +309,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
             .setSmallIcon(R.drawable.ic_stat_name)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
+            .addAction(R.drawable.ic_stop_black, getString(R.string.stop_server), stopPendingIntent)
             .build()
     }
 
