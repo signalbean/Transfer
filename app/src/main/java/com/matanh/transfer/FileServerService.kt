@@ -42,7 +42,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
     private val serviceJob = SupervisorJob() // Use SupervisorJob for resilience
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
-    private val _serverState = MutableStateFlow<ServerState>(ServerState.Stopped)
+    private val _serverState = MutableStateFlow<ServerState>(ServerState.Stopped(isFirst = true))
     val serverState: StateFlow<ServerState> = _serverState.asStateFlow()
 
     private val _ipPermissionRequests = MutableSharedFlow<IpPermissionRequest>(
@@ -198,7 +198,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
                 logger.e("Exception while stopping Ktor server")
             } finally {
                 ktorServer = null
-                _serverState.value = ServerState.Stopped
+                _serverState.value = ServerState.Stopped(isFirst = false)
                 logger.i("Ktor Server stopped.")
                 stopForeground(STOP_FOREGROUND_REMOVE)
             }

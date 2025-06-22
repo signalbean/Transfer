@@ -121,6 +121,7 @@
     <string name="open_github_issue">Open GitHub Issue</string>
     <string name="stop_server">Stop Server</string>
     <string name="start_server">Start Server</string>
+    <string name="server_starting">Server Starting…</string>
 
 
 </resources>

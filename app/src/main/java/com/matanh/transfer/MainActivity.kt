@@ -9,7 +9,6 @@ import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -391,6 +390,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 fileServerService!!.serverState.collect { state ->
+                    logger.d("Server state changed: $state ");
                     when (state) {
                         is ServerState.Running -> {
                             tvServerStatus.text = getString(R.string.server_running)
@@ -407,23 +407,35 @@ class MainActivity : AppCompatActivity() {
                             tvIpAddress.text = "${state.ip}:${state.port}"
                             btnStartServer.visibility = View.GONE
                         }
-
                         is ServerState.Stopped -> {
-                            tvServerStatus.text = getString(R.string.server_stopped)
-                            tvServerStatus.setTextColor(
-                                ContextCompat.getColor(
-                                    this@MainActivity,
-                                    R.color.red
-                                )
-                            )
                             viewStatusIndicator.background = ContextCompat.getDrawable(
                                 this@MainActivity,
                                 R.drawable.status_indicator_stopped
                             )
-                            tvIpAddress.text = getString(R.string.waiting_for_network)
-                            btnStartServer.visibility = View.VISIBLE
-                            // TODO: do not show on server without connection, only on stopped server.
+                            if (state.isFirst) {
+                                tvServerStatus.text = getString(R.string.server_starting)
+                                tvServerStatus.setTextColor(
+                                    ContextCompat.getColor(
+                                        this@MainActivity,
+                                        R.color.colorPrimary
+                                    )
+                                )
+                                tvIpAddress.text = getString(R.string.server_starting)
+                                btnStartServer.visibility = View.GONE
+                            }
+                            else{
+                                tvServerStatus.text = getString(R.string.server_stopped)
+                                tvServerStatus.setTextColor(
+                                    ContextCompat.getColor(
+                                        this@MainActivity,
+                                        R.color.red
+                                    )
+                                )
+                                tvIpAddress.text = getString(R.string.waiting_for_network)
+                                btnStartServer.visibility = View.VISIBLE
+                            }
                         }
+
 
                         is ServerState.Error -> {
                             tvServerStatus.text =
