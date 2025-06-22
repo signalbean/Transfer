@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true" 
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
 <com.google.android.material.appbar.AppBarLayout
@@ -31,7 +31,7 @@ app:layout_behavior="@string/appbar_scrolling_view_behavior">
     android:layout_margin="16dp"
     app:cardElevation="4dp"
     app:cardCornerRadius="8dp"
-    app:cardBackgroundColor="?attr/colorSurface" 
+    app:cardBackgroundColor="?attr/colorSurface"
 app:layout_constraintTop_toTopOf="parent"
 app:layout_constraintStart_toStartOf="parent"
 app:layout_constraintEnd_toEndOf="parent">
@@ -40,7 +40,7 @@ app:layout_constraintEnd_toEndOf="parent">
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp"> 
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -62,7 +62,7 @@ app:layout_constraintEnd_toEndOf="parent">
             android:text="@string/server_status_placeholder"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="?android:attr/textColorPrimary"/> 
+            android:textColor="?android:attr/textColorPrimary"/>
     </LinearLayout>
 
     <LinearLayout
@@ -70,7 +70,7 @@ app:layout_constraintEnd_toEndOf="parent">
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="12dp"> 
+        android:layout_marginTop="12dp">
 
         <TextView
             android:id="@+id/tvIpAddress"
@@ -78,17 +78,28 @@ app:layout_constraintEnd_toEndOf="parent">
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/waiting_for_network"
-            android:textSize="16sp" 
-        android:textColor="?android:attr/textColorSecondary"/> 
+            android:textSize="16sp"
+        android:textColor="?android:attr/textColorSecondary"/>
 
         <ImageButton
             android:id="@+id/btnCopyIp"
-            android:layout_width="48dp" 
-        android:layout_height="48dp" 
+            android:layout_width="48dp"
+        android:layout_height="48dp"
         android:src="@drawable/ic_copy"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/copy_ip_description"
         app:tint="@color/colorPrimary"/>
+
+        <Button
+            android:id="@+id/btnStartServer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/start_server"
+            android:layout_marginTop="12dp"
+            android:layout_gravity="center_horizontal"
+            android:visibility="gone"
+            tools:visibility="visible"/>
+
 
     </LinearLayout>
 
@@ -110,7 +121,7 @@ app:layout_constraintEnd_toEndOf="parent"
 android:clipToPadding="false"
 android:paddingBottom="80dp"
 tools:listitem="@layout/item_file"
-android:background="?android:attr/colorBackground" 
+android:background="?android:attr/colorBackground"
     android:contentDescription="@string/file_list_description" />
 
     <TextView
@@ -138,6 +149,6 @@ android:layout_gravity="bottom|end"
 android:layout_margin="16dp"
 android:src="@drawable/ic_upload_device"
 android:contentDescription="@string/upload_file"
-app:tint="@color/white"/> 
+app:tint="@color/white"/>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>

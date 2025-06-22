@@ -120,6 +120,7 @@
     <string name="copy_to_clipboard">Copy to Clipboard</string>
     <string name="open_github_issue">Open GitHub Issue</string>
     <string name="stop_server">Stop Server</string>
+    <string name="start_server">Start Server</string>
 
 
 </resources>

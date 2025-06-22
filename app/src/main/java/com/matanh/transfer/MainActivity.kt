@@ -13,6 +13,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
@@ -46,6 +47,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var fabUpload: FloatingActionButton
     private lateinit var viewStatusIndicator: View
     private lateinit var tvNoFilesMessage: TextView
+    private lateinit var btnStartServer: Button
 
     private var fileServerService: FileServerService? = null
     private var isServiceBound = false
@@ -162,7 +164,8 @@ class MainActivity : AppCompatActivity() {
         rvFiles = findViewById(R.id.rvFiles)
         fabUpload = findViewById(R.id.fabUpload)
         viewStatusIndicator = findViewById(R.id.viewStatusIndicator)
-        tvNoFilesMessage = findViewById(R.id.tvNoFilesMessage) // Initialize the new TextView
+        tvNoFilesMessage = findViewById(R.id.tvNoFilesMessage)
+        btnStartServer = findViewById(R.id.btnStartServer)
     }
 
     private fun setupClickListeners() {
@@ -177,6 +180,13 @@ class MainActivity : AppCompatActivity() {
         }
         fabUpload.setOnClickListener {
             uploadFile()
+        }
+        btnStartServer.setOnClickListener {
+            currentSelectedFolderUri?.let {
+                startFileServer(it)
+            } ?: run {
+                navigateToSettingsWithMessage(getString(R.string.select_shared_folder_prompt))
+            }
         }
     }
 
@@ -395,6 +405,7 @@ class MainActivity : AppCompatActivity() {
                                 R.drawable.status_indicator_running
                             )
                             tvIpAddress.text = "${state.ip}:${state.port}"
+                            btnStartServer.visibility = View.GONE
                         }
 
                         is ServerState.Stopped -> {
@@ -410,6 +421,8 @@ class MainActivity : AppCompatActivity() {
                                 R.drawable.status_indicator_stopped
                             )
                             tvIpAddress.text = getString(R.string.waiting_for_network)
+                            btnStartServer.visibility = View.VISIBLE
+                            // TODO: do not show on server without connection, only on stopped server.
                         }
 
                         is ServerState.Error -> {
