@@ -71,6 +71,11 @@ Dark mode (available in light and dark):
 Web interface (available in light and dark):
 ![web UI screenshot](data/web-interface.png)
 
+## Planned changes
+[ ] add an option to change the port in the settings
+[ ] fallback to hotspot IP in the display. 
+[ ] automatically update the IP when Wifi changes 
+
 ## Contributing
 
 Any contributions, bugs, or feedback are welcome!
