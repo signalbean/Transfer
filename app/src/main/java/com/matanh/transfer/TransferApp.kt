@@ -18,5 +18,9 @@ class TransferApp : Application() {
         // 2) Plant custom in‑memory tree
         memoryTree = InMemoryLogTree()
         Timber.plant(memoryTree)
+
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            Timber.e(throwable, "Uncaught exception in thread ${thread.name}")
+        }
     }
 }
