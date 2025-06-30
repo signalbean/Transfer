@@ -19,6 +19,14 @@ def fail(msg):
     print(f"Error: {msg}", file=sys.stderr)
     sys.exit(1)
 
+def normalize_changelog(changelog: str) -> str:
+    # Replace literal patterns (|\n|,  \n , \n) with actual newlines
+    changelog = changelog.replace('|\\n|', '\n')
+    changelog = changelog.replace(' \\n ', '\n')
+    changelog = changelog.replace('\\n', '\n')
+    return changelog
+
+
 def run(cmd, dry_run=False):
     cmd_str = " ".join(cmd)
     if dry_run:
@@ -46,6 +54,7 @@ def get_current_version(file_path):
         return version_name_match.group(1), int(version_code_match.group(1))
     else:
         fail("Could not parse current version from build.gradle")
+        exit(1) # fail already exits, but for typing
 
 def get_latest_git_tag():
     try:
@@ -98,6 +107,8 @@ def update_version_file(file_path, version_name, version_code, dry_run=False):
         file_path.write_text(new_text)
 
 def write_fastlane_changelog(version_code: int, changelog: str, dry_run=False):
+    changelog = normalize_changelog(changelog)
+
     encoded = changelog.encode("ascii")
 
     if len(encoded) > MAX_CHANGELOG_SIZE:
@@ -128,6 +139,7 @@ def main():
 
     if not args.version_or_bump:
         version_name, version_code = get_current_version(gradle_file)
+
         print(f"Current versionName: {version_name}")
         print(f"Current versionCode: {version_code}")
         print(f"Latest Git tag: {get_latest_git_tag()}")
