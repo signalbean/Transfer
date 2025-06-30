@@ -129,13 +129,26 @@ document.addEventListener('DOMContentLoaded', () => {
             // Dynamically add data attributes for easy access
             row.dataset.fileName = file.name;
 
-            row.insertCell().textContent = file.name;
-            row.insertCell().textContent = file.formattedSize || formatBytes(file.size); // Use formattedSize if available, or format
-            row.insertCell().textContent = file.lastModified;
-            row.insertCell().textContent = file.type;
+            // Add data-label attributes for responsive CSS
+            const nameCell = row.insertCell();
+            nameCell.textContent = file.name;
+            nameCell.dataset.label = 'Name';
+
+            const sizeCell = row.insertCell();
+            sizeCell.textContent = file.formattedSize || formatBytes(file.size);
+            sizeCell.dataset.label = 'Size';
+
+            const modifiedCell = row.insertCell();
+            modifiedCell.textContent = file.lastModified;
+            modifiedCell.dataset.label = 'Last Modified';
+
+            const typeCell = row.insertCell();
+            typeCell.textContent = file.type;
+            typeCell.dataset.label = 'Type';
 
             // Add the action icons container to the last cell
             const actionsCell = row.insertCell();
+            actionsCell.dataset.label = 'Actions';
             actionsCell.style.textAlign = 'right'; // Align icons to the right
 
             const actionIconsContainer = document.createElement('div');

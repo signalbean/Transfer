@@ -504,13 +504,6 @@ footer {
         font-size: 1rem;
     }
 
-    #files-table th,
-    #files-table td {
-        padding: 8px 10px;
-        /* Further reduced for mobile */
-        font-size: 0.85rem;
-    }
-
     .icon-button {
         padding: 0.4rem;
         /* Smaller icons on mobile */
@@ -521,104 +514,83 @@ footer {
         height: 16px;
     }
 
-    /* Adjust column widths for smaller screens */
-    #files-table th:nth-child(1),
-    #files-table td:nth-child(1) {
-        width: 30%;
+    /*
+      Mobile Table Redesign
+      - Hides the header and transforms rows into cards for better mobile usability.
+    */
+    .table-container {
+        border: none;
+        box-shadow: none;
     }
 
-    /* Name */
-    #files-table th:nth-child(2),
-    #files-table td:nth-child(2) {
-        width: 15%;
+    #files-table {
+        table-layout: auto; /* Reset table layout */
     }
 
-    /* Size */
-    #files-table th:nth-child(3),
-    #files-table td:nth-child(3) {
-        width: 25%;
+    /* Hide table headers visually, but keep them for screen readers */
+    #files-table thead {
+        border: none;
+        clip: rect(0 0 0 0);
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        padding: 0;
+        position: absolute;
+        width: 1px;
     }
 
-    /* Last Modified */
-    #files-table th:nth-child(4),
-    #files-table td:nth-child(4) {
-        width: 15%;
+    #files-table tr {
+        display: block;
+        border: 1px solid var(--divider-color);
+        border-radius: 8px; /* Makes each row a "card" */
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px var(--shadow-light);
+        background-color: var(--card-background); /* Ensure cards have a background */
     }
 
-    /* Type */
-    #files-table th:nth-child(5),
-    #files-table td:nth-child(5) {
-        width: 15%;
+    #files-table tbody tr {
+        background-color: var(--card-background);
     }
 
-    /* Actions */
+    #files-table td {
+        display: block;
+        text-align: right; /* Align cell content (the value) */
+        font-size: 0.9rem;
+        padding: 12px 15px 12px 50%; /* Top, Right, Bottom, Left padding */
+        position: relative;
+        white-space: normal; /* Allow text to wrap */
+        overflow: visible;
+        text-overflow: clip;
+        border-bottom: 1px solid var(--divider-color);
+    }
+
+    #files-table td:last-child {
+        border-bottom: none; /* No border for the last cell in a card */
+    }
+
+    /* Use the data-label attribute to create a pseudo-header */
+    #files-table td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 15px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: 600;
+        color: var(--primary-color); /* Make labels stand out */
+    }
+
+    /* Ensure the actions container aligns correctly within the new layout */
+    #files-table td .action-icons-container {
+        justify-content: flex-end; /* Aligns buttons to the right */
+        padding: 0;
+    }
+
+    /* Reset widths from desktop view */
+    #files-table th:nth-child(n),
+    #files-table td:nth-child(n) {
+        width: auto;
+    }
 }
 
-@media (max-width: 480px) {
-    header {
-        padding: 1rem 0.8rem;
-    }
-
-    header h1 {
-        font-size: 1.8rem;
-    }
-
-    .theme-toggle-button {
-        font-size: 1.2rem;
-        width: 35px;
-        height: 35px;
-    }
-
-    main {
-        margin: 1rem auto;
-        padding: 0 0.5rem;
-    }
-
-    section {
-        padding: 0.8rem;
-    }
-
-    h2 {
-        font-size: 1.2rem;
-    }
-
-    .modal-content {
-        padding: 1.5rem;
-    }
-
-    .modal-content p {
-        font-size: 1rem;
-    }
-
-    /* Further adjust column widths for very small screens */
-    #files-table th:nth-child(1),
-    #files-table td:nth-child(1) {
-        width: 28%;
-    }
-
-    /* Name */
-    #files-table th:nth-child(2),
-    #files-table td:nth-child(2) {
-        width: 18%;
-    }
-
-    /* Size */
-    #files-table th:nth-child(3),
-    #files-table td:nth-child(3) {
-        width: 22%;
-    }
-
-    /* Last Modified */
-    #files-table th:nth-child(4),
-    #files-table td:nth-child(4) {
-        width: 17%;
-    }
-
-    /* Type */
-    #files-table th:nth-child(5),
-    #files-table td:nth-child(5) {
-        width: 15%;
-    }
-
-    /* Actions */
-}
