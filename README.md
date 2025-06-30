@@ -72,20 +72,13 @@ Yes, you can set a [static IP](https://junipersys.com/support/article/14695) on 
 Yes, Transfer works over your local Wi-Fi network, so an internet connection is not required. However, all devices must be connected to the same local network.
 
 ### What happens to files I share/upload to the Transfer
-Transfer copy the files to the shared folder you set earlier.   
-
-### Do you have good UI?
-Dark mode (available in light and dark):
-
-![dark mode screenshot](data/dark_mode.png)
-
-Web interface (available in light and dark):
-![web UI screenshot](data/web-interface.png)
+Transfer copy the files to the shared folder you set earlier.
 
 ## Planned changes
-[ ] add an option to change the port in the settings
-[ ] fallback to hotspot IP in the display. 
-[ ] automatically update the IP when Wifi changes 
+
+- [ ] add an option to change the port in the settings
+- [ ] fallback to hotspot IP in the display.
+- [ ] automatically update the IP when Wifi changes
 
 ## Contributing
 
