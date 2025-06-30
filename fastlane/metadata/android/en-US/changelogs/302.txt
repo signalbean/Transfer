@@ -1,0 +1,2 @@
+Fix notification, now with stop button (fix #9,#7)
+better screenshots - by @mkalmousli [#8]
