@@ -30,6 +30,7 @@
     <string name="error_parsing_folder_uri">Error: Could not parse selected folder URI.</string>
     <string name="file_uploaded">File uploaded: %s</string>
     <string name="no_files_selected">No files selected.</string>
+    <string name="no_folder_selected">No folder selected.</string>
 
 
     <string name="text_pasted_to_file">Text pasted to %s</string>

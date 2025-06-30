@@ -22,7 +22,7 @@ class SettingsActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
             if (uri != null) {
                 Utils.persistUriPermission(this, uri)
-                val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+                val prefs = getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
                 prefs.edit { putString(Constants.EXTRA_FOLDER_URI, uri.toString()) }
                 Toast.makeText(this, "Shared folder selected", Toast.LENGTH_SHORT).show()
             }
@@ -94,7 +94,9 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun updatePasswordSummary(passwordPreference: EditTextPreference?) {
-            val password = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            val prefs = requireContext().getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
+
+            val password = prefs
                 .getString(getString(R.string.pref_key_server_password), null)
             if (password.isNullOrEmpty()) {
                 passwordPreference?.summary = getString(R.string.pref_summary_password_protect_off)
@@ -104,7 +106,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun updateFolderSummary() {
-            val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            val prefs = requireContext().getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
             val uriString = prefs.getString(Constants.EXTRA_FOLDER_URI, null)
             val folderPreference = findPreference<Preference>("pref_key_shared_folder")
             if (uriString != null) {
@@ -112,7 +114,7 @@ class SettingsActivity : AppCompatActivity() {
                 val docFile = DocumentFile.fromTreeUri(requireContext(), uri)
                 folderPreference?.summary = docFile?.name ?: uri.path
             } else {
-                folderPreference?.summary = "No folder selected"
+                folderPreference?.summary = getString(R.string.no_folder_selected)
             }
         }
     }

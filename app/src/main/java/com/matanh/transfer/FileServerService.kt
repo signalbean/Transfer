@@ -5,13 +5,12 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Binder
-import android.os.Build
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
@@ -46,8 +45,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
     val serverState: StateFlow<ServerState> = _serverState.asStateFlow()
 
     private val _ipPermissionRequests = MutableSharedFlow<IpPermissionRequest>(
-        replay = 0,
-        extraBufferCapacity = 1
+        replay = 0, extraBufferCapacity = 1
     )
 
     val ipPermissionRequests = _ipPermissionRequests.asSharedFlow()
@@ -63,6 +61,14 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
     var currentSharedFolderUri: Uri? = null
         private set
 
+    // New properties for handling background IP permission
+    @Volatile
+    private var isActivityInForeground = false
+    private val pendingNotificationRequests = mutableMapOf<String, CompletableDeferred<Boolean>>()
+
+    private val pendingIntentFlags by lazy {
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    }
 
     inner class LocalBinder : Binder() {
         fun getService(): FileServerService = this@FileServerService
@@ -70,14 +76,45 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
 
     companion object {
         private val logger = Timber.tag("FileServerServiceKtor")
+
+        // Constants for IP Permission Notification
+        const val PERMISSION_NOTIFICATION_CHANNEL_ID = "ip_permission_channel"
+        const val ACTION_IP_PERMISSION_RESPONSE =
+            "com.matanh.transfer.ACTION_IP_PERMISSION_RESPONSE"
+        const val EXTRA_IP_ADDRESS = "extra_ip_address"
+        const val EXTRA_IP_PERMISSION_APPROVED = "extra_ip_permission_approved"
     }
 
     override fun onCreate() {
         super.onCreate()
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
+        sharedPreferences = getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
+
         sharedPreferences.registerOnSharedPreferenceChangeListener(this) // track changes
         createNotificationChannel()
         logger.d("FileServerService onCreate")
+    }
+
+    // Public methods for activity to report its state
+    fun activityResumed() {
+        isActivityInForeground = true
+        // If there are pending notifications, cancel them and forward to the activity
+        if (pendingNotificationRequests.isNotEmpty()) {
+            serviceScope.launch {
+                val requestsToForward = pendingNotificationRequests.toMap()
+                pendingNotificationRequests.clear() // Clear immediately
+                requestsToForward.forEach { (ip, deferred) ->
+                    val notificationManager =
+                        getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    notificationManager.cancel(ip.hashCode())
+                    logger.d("Forwarding background IP request for $ip to foreground activity.")
+                    _ipPermissionRequests.emit(IpPermissionRequest(ip, deferred))
+                }
+            }
+        }
+    }
+
+    fun activityPaused() {
+        isActivityInForeground = false
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
@@ -120,12 +157,41 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
                 stopKtorServer()
                 stopSelf()
             }
+
+            ACTION_IP_PERMISSION_RESPONSE -> {
+                handleIpPermissionResponse(intent)
+            }
         }
         return START_NOT_STICKY
     }
 
+    private fun handleIpPermissionResponse(intent: Intent) {
+        val ipAddress = intent.getStringExtra(EXTRA_IP_ADDRESS)
+        val approved = intent.getBooleanExtra(EXTRA_IP_PERMISSION_APPROVED, false)
+
+        if (ipAddress == null) {
+            logger.e("IP address missing in permission response intent.")
+            return
+        }
+
+        val deferred = pendingNotificationRequests.remove(ipAddress)
+        if (deferred != null) {
+            if (deferred.isCompleted) {
+                logger.w("Deferred for IP $ipAddress was already completed.")
+            } else {
+                logger.i("Completing permission for $ipAddress with result: $approved via notification.")
+                deferred.complete(approved)
+            }
+        } else {
+            logger.w("No pending notification request found for IP $ipAddress.")
+        }
+
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(ipAddress.hashCode())
+    }
+
     private fun startKtorServer() {
-        // Launch in the service's scope
         serviceScope.launch {
 
             // If the server is already running, stop it first.
@@ -167,9 +233,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
                 ktorServer =
                     embeddedServer(CIO, port = Constants.SERVER_PORT, host = "0.0.0.0", module = {
                         transferServerModule(
-                            applicationContext,
-                            serviceProvider,
-                            currentSharedFolderUri!!
+                            applicationContext, serviceProvider, currentSharedFolderUri!!
                         )
                     }).apply {
                         start(wait = false) // Start non-blocking
@@ -195,7 +259,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
             try {
                 ktorServer?.stop(1000, 2000) // Grace period and timeout
             } catch (e: Exception) {
-                logger.e("Exception while stopping Ktor server")
+                logger.e(e, "Exception while stopping Ktor server $e")
             } finally {
                 ktorServer = null
                 _serverState.value = ServerState.Stopped(isFirst = false)
@@ -208,8 +272,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
     // --- Callbacks for Ktor Module ---
     fun isIpPermissionRequired(): Boolean {
         return sharedPreferences.getBoolean(
-            getString(R.string.pref_key_ip_permission_enabled),
-            true
+            getString(R.string.pref_key_ip_permission_enabled), true
         )
     }
 
@@ -230,13 +293,20 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
         // Create a Deferred<Boolean> that the UI will complete
         val deferred = CompletableDeferred<Boolean>()
 
-        // Emit into the SharedFlow. Because extraBufferCapacity = 1 above, this never hangs.
-        _ipPermissionRequests.emit(IpPermissionRequest(ipAddress, deferred))
+        if (isActivityInForeground) {
+            logger.d("Activity is in foreground. Emitting request to UI.")
+            _ipPermissionRequests.emit(IpPermissionRequest(ipAddress, deferred))
+        } else {
+            logger.d("Activity is in background. Showing notification for IP permission.")
+            pendingNotificationRequests[ipAddress] = deferred
+            showIpPermissionNotification(ipAddress)
+        }
 
-        // Now suspend until the UI calls `deferred.complete(true)` or `.complete(false)`
         val approved = try {
             deferred.await()
         } catch (e: CancellationException) {
+            logger.w("IP approval for $ipAddress was cancelled.")
+            pendingNotificationRequests.remove(ipAddress)
             false
         }
 
@@ -265,38 +335,71 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
     // --- Notification and Binder ---
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val serviceChannel = NotificationChannel(
-                Constants.NOTIFICATION_CHANNEL_ID,
-                getString(R.string.notification_channel_name),
-                NotificationManager.IMPORTANCE_LOW
-            )
-            serviceChannel.description = getString(R.string.notification_channel_description)
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(serviceChannel)
+        val serviceChannel = NotificationChannel(
+            Constants.NOTIFICATION_CHANNEL_ID,
+            getString(R.string.notification_channel_name),
+            NotificationManager.IMPORTANCE_LOW
+        )
+        serviceChannel.description = getString(R.string.notification_channel_description)
+
+        val permissionChannel = NotificationChannel(
+            PERMISSION_NOTIFICATION_CHANNEL_ID,
+            "IP Permission Requests", // Should be a string resource
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Shows notifications to allow or deny connections from new IP addresses."
         }
+
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(serviceChannel)
+        manager.createNotificationChannel(permissionChannel)
+    }
+
+    private fun showIpPermissionNotification(ipAddress: String) {
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val uniqueId = ipAddress.hashCode()
+
+        val contentIntent = Intent(this, MainActivity::class.java).let {
+            PendingIntent.getActivity(this, uniqueId, it, pendingIntentFlags)
+        }
+
+        val allowIntent = Intent(this, FileServerService::class.java).apply {
+            action = ACTION_IP_PERMISSION_RESPONSE
+            putExtra(EXTRA_IP_ADDRESS, ipAddress)
+            putExtra(EXTRA_IP_PERMISSION_APPROVED, true)
+        }
+        val allowPendingIntent =
+            PendingIntent.getService(this, uniqueId * 2, allowIntent, pendingIntentFlags)
+
+        val denyIntent = Intent(this, FileServerService::class.java).apply {
+            action = ACTION_IP_PERMISSION_RESPONSE
+            putExtra(EXTRA_IP_ADDRESS, ipAddress)
+            putExtra(EXTRA_IP_PERMISSION_APPROVED, false)
+        }
+        val denyPendingIntent =
+            PendingIntent.getService(this, uniqueId * 2 + 1, denyIntent, pendingIntentFlags)
+
+        val notification = NotificationCompat.Builder(this, PERMISSION_NOTIFICATION_CHANNEL_ID)
+            .setContentTitle(getString(R.string.permission_request_title))
+            .setContentText(getString(R.string.permission_request_message, ipAddress))
+            .setSmallIcon(R.drawable.ic_stat_name).setContentIntent(contentIntent)
+            .setAutoCancel(true).setPriority(NotificationCompat.PRIORITY_HIGH)
+            .addAction(0, getString(R.string.allow), allowPendingIntent)
+            .addAction(0, getString(R.string.deny), denyPendingIntent).build()
+
+        notificationManager.notify(uniqueId, notification)
     }
 
     private fun createNotification(): Notification {
         val notificationIntent = Intent(this, MainActivity::class.java)
-        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        } else {
-            PendingIntent.FLAG_UPDATE_CURRENT
-        }
         val pendingIntent =
             PendingIntent.getActivity(this, 0, notificationIntent, pendingIntentFlags)
 
-        // add stop button the the notification
         val stopIntent = Intent(this, FileServerService::class.java).apply {
             action = Constants.ACTION_STOP_SERVICE
         }
-        val stopPendingIntent = PendingIntent.getService(
-            this,
-            0,
-            stopIntent,
-            pendingIntentFlags
-        )
+        val stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, pendingIntentFlags)
 
         val ipAddress =
             (_serverState.value as? ServerState.Running)?.ip ?: Utils.getLocalIpAddress(this)
@@ -306,19 +409,9 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
         return NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL_ID)
             .setContentTitle(getString(R.string.file_server_notification_title))
             .setContentText(getString(R.string.file_server_notification_text, ipAddress, port))
-            .setSmallIcon(R.drawable.ic_stat_name)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
+            .setSmallIcon(R.drawable.ic_stat_name).setContentIntent(pendingIntent).setOngoing(true)
             .addAction(R.drawable.ic_stop_black, getString(R.string.stop_server), stopPendingIntent)
             .build()
-    }
-
-    private fun updateNotification() {
-        if (_serverState.value is ServerState.Running) {
-            val notificationManager =
-                getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(Constants.NOTIFICATION_ID, createNotification())
-        }
     }
 
     override fun onBind(intent: Intent): IBinder = binder
