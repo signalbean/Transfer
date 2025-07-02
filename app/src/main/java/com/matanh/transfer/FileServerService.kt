@@ -42,7 +42,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
-    private val _serverState = MutableStateFlow<ServerState>(ServerState.Stopped)
+    private val _serverState = MutableStateFlow<ServerState>(ServerState.UserStopped)
     val serverState: StateFlow<ServerState> = _serverState.asStateFlow()
 
     private val _ipPermissionRequests =
@@ -100,16 +100,26 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
         serviceScope.launch {
             networkHelper.currentIpAddress.collectLatest { ipAddress ->
                 val currentState = _serverState.value
-                if (currentState is ServerState.Running) {
-                    if (ipAddress != null && currentState.ip != ipAddress) {
-                        logger.i("IP address changed from ${currentState.ip} to $ipAddress. Updating state.")
-                        _serverState.value = ServerState.Running(ipAddress, currentState.port)
+                if (currentState is ServerState.Error || currentState is ServerState.UserStopped) { // ignore user stopped/error IP changes
+                    return@collectLatest
+                }
+
+                if (currentState is ServerState.AwaitNetwork || currentState is ServerState.Running) {
+                    if (ipAddress != null) {
+                        if (currentState is ServerState.Running && currentState.ip != ipAddress) {
+                            logger.i("IP address changed from ${currentState.ip} to $ipAddress. restarting server.")
+                            startKtorServer()
+                        }
+                        else{ // ServerState.AwaitNetwork
+                            logger.i("IP address changed to $ipAddress.  restarting server.")
+                            startKtorServer()
+                        }
                         updateNotification()
-                    } else if (ipAddress == null) {
+                    } else { // ipAddress is null
                         logger.w("WiFi disconnected. Stopping server.")
-                        _serverState.value = ServerState.Error("Wi-Fi not connected.")
-                        stopKtorServer() // This will also update notification
+                        stopKtorServer(ServerState.AwaitNetwork) // This will also update notification
                     }
+
                 }
             }
         }
@@ -174,7 +184,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
             }
 
             Constants.ACTION_STOP_SERVICE -> {
-                stopKtorServer()
+                stopKtorServer(ServerState.UserStopped)
                 stopSelf()
             }
 
@@ -229,7 +239,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
             try {
                 val ipAddress = networkHelper.currentIpAddress.value
                 if (ipAddress == null) {
-                    _serverState.value = ServerState.Error("Wi-Fi not connected or IP not found.")
+                    _serverState.value = ServerState.AwaitNetwork
                     logger.e("Failed to get local IP address.")
                     updateNotification()
                     return@launch
@@ -260,7 +270,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
         }
     }
 
-    private fun stopKtorServer() {
+    private fun stopKtorServer(state: ServerState) {
         serviceScope.launch {
             try {
                 ktorServer?.stop(1000, 2000)
@@ -268,10 +278,12 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
                 logger.e(e, "Exception while stopping Ktor server $e")
             } finally {
                 ktorServer = null
-                _serverState.value = ServerState.Stopped
+                _serverState.value = state
                 logger.i("Ktor Server stopped.")
                 stopForeground(STOP_FOREGROUND_REMOVE)
+                if (state != ServerState.UserStopped) updateNotification() // if user stopped, the notification can be removed
             }
+
         }
     }
 
@@ -392,8 +404,11 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
                 R.string.server_starting
             )
 
-            is ServerState.Stopped -> getString(R.string.file_server_notification_title) to getString(
+            is ServerState.UserStopped -> getString(R.string.file_server_notification_title) to getString(
                 R.string.server_stopped
+            )
+            is ServerState.AwaitNetwork -> getString(R.string.file_server_notification_title) to getString(
+                R.string.waiting_for_network
             )
 
             is ServerState.Error -> getString(R.string.file_server_notification_title) to getString(
@@ -414,7 +429,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
         logger.d("FileServerService onDestroy")
         networkHelper.unregister()
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
-        stopKtorServer() // Ensure server is stopped
+        stopKtorServer(ServerState.UserStopped) // Ensure server is stopped
         serviceJob.cancel() // Cancel all coroutines in this scope
         super.onDestroy()
     }

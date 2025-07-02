@@ -386,7 +386,8 @@ class MainActivity : AppCompatActivity() {
                             btnCopyIp.visibility = View.VISIBLE
                         }
 
-                        is ServerState.Stopped -> {
+                        ServerState.UserStopped,
+                        ServerState.AwaitNetwork -> {
                             tvServerStatus.text = getString(R.string.server_stopped)
                             tvServerStatus.setTextColor(
                                 ContextCompat.getColor(
@@ -400,6 +401,7 @@ class MainActivity : AppCompatActivity() {
                             btnStartServer.visibility = View.VISIBLE
                             btnCopyIp.visibility = View.INVISIBLE
                         }
+
 
                         is ServerState.Error -> {
                             tvServerStatus.text =

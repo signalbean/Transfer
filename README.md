@@ -78,7 +78,7 @@ Transfer copy the files to the shared folder you set earlier.
 
 - [ ] add an option to change the port in the settings
 - [ ] fallback to hotspot IP in the display.
-- [ ] automatically update the IP when Wifi changes
+- [x] automatically update the IP when Wifi changes
 
 ## Contributing
 
