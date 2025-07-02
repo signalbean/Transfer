@@ -58,6 +58,8 @@ class SettingsActivity : AppCompatActivity() {
 
     class SettingsFragment : PreferenceFragmentCompat() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+            // Tell PreferenceManager to use the right SharedPreferences file (see #18)
+            preferenceManager.sharedPreferencesName = Constants.SHARED_PREFS_NAME
             setPreferencesFromResource(R.xml.preferences, rootKey)
 
             // Password Preference
@@ -94,10 +96,11 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun updatePasswordSummary(passwordPreference: EditTextPreference?) {
-            val prefs = requireContext().getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
+            val prefs = preferenceManager.sharedPreferences
+
 
             val password = prefs
-                .getString(getString(R.string.pref_key_server_password), null)
+                ?.getString(getString(R.string.pref_key_server_password), null)
             if (password.isNullOrEmpty()) {
                 passwordPreference?.summary = getString(R.string.pref_summary_password_protect_off)
             } else {
@@ -106,8 +109,8 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun updateFolderSummary() {
-            val prefs = requireContext().getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
-            val uriString = prefs.getString(Constants.EXTRA_FOLDER_URI, null)
+            val prefs = preferenceManager.sharedPreferences
+            val uriString = prefs?.getString(Constants.EXTRA_FOLDER_URI, null)
             val folderPreference = findPreference<Preference>("pref_key_shared_folder")
             if (uriString != null) {
                 val uri = uriString.toUri()
