@@ -1,0 +1,5 @@
+new features:
+* auto update IP when WiFi changes
+* permission dialog now in notification when the app not in focus
+
+ bug fixes: the download button now visable on mobile web UI,app no longer crash without WiFi on settings (#17)
