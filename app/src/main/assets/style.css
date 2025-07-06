@@ -558,7 +558,7 @@ footer {
         font-size: 0.9rem;
         padding: 12px 15px 12px 50%; /* Top, Right, Bottom, Left padding */
         position: relative;
-        white-space: normal; /* Allow text to wrap */
+        white-space: nowrap; /* Allow text to wrap */
         overflow: visible;
         text-overflow: clip;
         border-bottom: 1px solid var(--divider-color);
@@ -587,10 +587,11 @@ footer {
         padding: 0;
     }
 
-    /* Reset widths from desktop view */
+    /* set widths for phone view */
     #files-table th:nth-child(n),
     #files-table td:nth-child(n) {
         width: auto;
+        max-width: 360px; /* Prevents overflow on phones */
     }
 }
 
