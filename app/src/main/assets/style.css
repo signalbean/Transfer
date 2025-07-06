@@ -330,6 +330,37 @@ background-color: var(--error-color);
     /* Delete icon becomes red on hover */
     border-color: var(--error-color);
 }
+#files-header-container {
+    display: flex; /* Enable Flexbox */
+    justify-content: space-between; /* Puts space between the h2 and the button div */
+    align-items: center; /* Vertically aligns items in the middle */
+    margin-bottom: 1rem; /* Maintains the spacing below the header */
+    padding: 0 15px; /* Add some padding to the sides */
+}
+
+#files-actions {
+    /* Remove inline styles here, flexbox handles alignment */
+    margin-bottom: 0; /* Reset margin if inherited from elsewhere */
+}
+
+/* Styling for the Download All as Zip button */
+#download-all-zip-button {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 4px var(--shadow-light);
+    white-space: nowrap; /* Prevent button text from wrapping */
+}
+
+#download-all-zip-button:hover {
+    background-color: var(--primary-gradient-end);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px var(--shadow-medium);
+}
+
+
 
 /* SVG icon styling */
 .icon-button svg {

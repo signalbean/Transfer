@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const noFilesMessage = document.getElementById('no-files-message');
     const themeToggleButton = document.getElementById('theme-toggle');
     const themeIcon = document.getElementById('theme-icon');
+    const downloadAllZipButton = document.getElementById('download-all-zip-button'); // New
 
     // Modal elements
     const confirmationModalOverlay = document.getElementById('confirmation-modal-overlay');
@@ -105,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error fetching files:', response.status, errorText);
                 filesTableBody.innerHTML = `<tr><td colspan="5" style="color: var(--error-color);">Error loading files: ${errorText}</td></tr>`;
                 noFilesMessage.style.display = 'none';
+                downloadAllZipButton.style.display = 'none'; // Hide button on error
                 return;
             }
             const data = await response.json();
@@ -113,6 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Failed to fetch files:', error);
             filesTableBody.innerHTML = `<tr><td colspan="5" style="color: var(--error-color);">Could not connect to server or error fetching files.</td></tr>`;
             noFilesMessage.style.display = 'none';
+            downloadAllZipButton.style.display = 'none';
+
         }
     }
 
@@ -120,9 +124,11 @@ document.addEventListener('DOMContentLoaded', () => {
         filesTableBody.innerHTML = ''; // Clear existing files
         if (!files || files.length === 0) {
             noFilesMessage.style.display = 'block';
+            downloadAllZipButton.style.display = 'none'; // Hide button if no files
             return;
         }
         noFilesMessage.style.display = 'none';
+        downloadAllZipButton.style.display = 'block';
 
         files.forEach(file => {
             const row = filesTableBody.insertRow();
@@ -186,20 +192,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-        function confirmDeleteFile(fileName) {
-            // Check localStorage preference first
-            const doNotAskAgain = localStorage.getItem('doNotAskAgainDelete') === 'true';
+    function confirmDeleteFile(fileName) {
+        // Check localStorage preference first
+        const doNotAskAgain = localStorage.getItem('doNotAskAgainDelete') === 'true';
 
-            if (doNotAskAgain) {
-                deleteFile(fileName); // Proceed directly if preference is set
-            } else {
-                showConfirmModal(`Delete "${fileName}"?`, (confirmed) => { // Shorter message
-                    if (confirmed) {
-                        deleteFile(fileName);
-                    }
-                });
-            }
+        if (doNotAskAgain) {
+            deleteFile(fileName); // Proceed directly if preference is set
+        } else {
+            showConfirmModal(`Delete "${fileName}"?`, (confirmed) => { // Shorter message
+                if (confirmed) {
+                    deleteFile(fileName);
+                }
+            });
         }
+    }
 
     async function deleteFile(fileName) {
         try {
@@ -219,6 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (filesTableBody.children.length === 0) {
                     noFilesMessage.style.display = 'block';
+                    downloadAllZipButton.style.display = 'none';
                 }
                 // Optionally show a temporary success message
                 console.log(`Successfully deleted: ${fileName}`);
@@ -355,6 +362,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
+
+    downloadAllZipButton.addEventListener('click', () => {
+        window.location.href = '/api/zip';
+    });
+
 
     // Initial load of files when the page is ready
     fetchFiles();
