@@ -1,0 +1,6 @@
+New features:
+* added a download all buton (#21)
+
+ Bug fixes:
+* Style fix on the website for long filenames in small screens (#19)
+* Reverse the screenshots symlink direction to make it work better on izzydroid (PR #22 by @mkalmousli)
