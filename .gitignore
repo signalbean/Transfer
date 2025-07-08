@@ -12,3 +12,6 @@
 local.properties
 
 */keystore/transfer-key.jks
+
+venv/
+__pycache__/
