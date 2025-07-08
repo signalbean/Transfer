@@ -590,8 +590,7 @@ footer {
         padding: 12px 15px 12px 50%; /* Top, Right, Bottom, Left padding */
         position: relative;
         white-space: nowrap; /* Allow text to wrap */
-        overflow: visible;
-        text-overflow: clip;
+        text-overflow: ellipsis;
         border-bottom: 1px solid var(--divider-color);
     }
 
@@ -622,7 +621,7 @@ footer {
     #files-table th:nth-child(n),
     #files-table td:nth-child(n) {
         width: auto;
-        max-width: 360px; /* Prevents overflow on phones */
+        max-width: 60vw; /* Prevents overflow on phones */
     }
 }
 
