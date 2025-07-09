@@ -91,18 +91,18 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    androidTestImplementation ("androidx.test:runner:1.6.2")
-    androidTestImplementation ("androidx.test:rules:1.6.1")
+    androidTestImplementation (libs.androidx.runner)
+    androidTestImplementation (libs.androidx.rules)
 
     // Espresso
-    androidTestImplementation ("androidx.test.espresso:espresso-contrib:3.6.1")
+    androidTestImplementation (libs.androidx.espresso.contrib)
 
     // UI Automator
-    androidTestImplementation ("androidx.test.uiautomator:uiautomator:2.3.0")
+    androidTestImplementation (libs.androidx.uiautomator)
 
     // OkHttp for making network requests in the test
-    androidTestImplementation ("com.squareup.okhttp3:okhttp:4.11.0")
+    androidTestImplementation (libs.okhttp)
 
-    androidTestImplementation ("org.awaitility:awaitility-kotlin:4.2.0")
+    androidTestImplementation (libs.awaitility.kotlin)
 
 }
