@@ -476,6 +476,15 @@ class MainActivity : AppCompatActivity() {
             putExtra(Constants.EXTRA_FOLDER_URI, folderUri.toString())
         }
         ContextCompat.startForegroundService(this, serviceIntent)
+        // 2. (Re)bind so we always have a fresh Binder reference
+        if (!isServiceBound) {
+            bindService(
+                Intent(this, FileServerService::class.java),
+                serviceConnection,
+                BIND_AUTO_CREATE
+            )
+        }
+
     }
 
     private fun shareMultipleFiles(files: List<FileItem>) {
