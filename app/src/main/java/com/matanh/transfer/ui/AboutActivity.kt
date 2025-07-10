@@ -1,4 +1,4 @@
-package com.matanh.transfer
+package com.matanh.transfer.ui
 
 import android.content.Intent
 import android.graphics.ColorMatrix
@@ -14,6 +14,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
 import com.google.android.material.button.MaterialButton
+import com.matanh.transfer.BuildConfig
+import com.matanh.transfer.R
 import timber.log.Timber
 
 

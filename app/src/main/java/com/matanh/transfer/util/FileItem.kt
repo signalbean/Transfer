@@ -1,4 +1,4 @@
-package com.matanh.transfer
+package com.matanh.transfer.util
 
 import android.net.Uri
 

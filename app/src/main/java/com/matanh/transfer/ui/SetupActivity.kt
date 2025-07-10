@@ -1,4 +1,4 @@
-package com.matanh.transfer
+package com.matanh.transfer.ui
 
 import android.content.Intent
 import android.net.Uri
@@ -17,6 +17,10 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
+import com.matanh.transfer.util.Constants
+import com.matanh.transfer.util.FileUtils
+import com.matanh.transfer.MainActivity
+import com.matanh.transfer.R
 
 
 class SetupActivity : AppCompatActivity() {
@@ -25,7 +29,7 @@ class SetupActivity : AppCompatActivity() {
     private val selectFolderLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
             if (uri != null) {
-                Utils.persistUriPermission(this, uri) // Persist permission
+                FileUtils.persistUriPermission(this, uri) // Persist permission
                 // Store the URI so MainActivity can pick it up
                 val prefs = getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
                 prefs.edit { putString(Constants.EXTRA_FOLDER_URI, uri.toString()) }
@@ -69,7 +73,7 @@ class SetupActivity : AppCompatActivity() {
             val persistedUri = persistedUriString.toUri()
             logger.d("Persisted URI: $persistedUri")
             // Check if permissions are still valid for the persisted URI
-            if (Utils.isUriPermissionPersisted(this, persistedUri)) {
+            if (FileUtils.isUriPermissionPersisted(this, persistedUri)) {
                 // Attempt to access the DocumentFile to further validate
                 val docFile = DocumentFile.fromTreeUri(this, persistedUri)
                 if (docFile != null && docFile.canRead()) {
@@ -77,10 +81,10 @@ class SetupActivity : AppCompatActivity() {
                     return // Skip setup layout
                 } else {
                     // URI persisted but not accessible, clear it and proceed with setup
-                    Utils.clearPersistedUri(this)
+                    FileUtils.clearPersistedUri(this)
                 }
             } else {
-                Utils.clearPersistedUri(this) // Persisted but no permissions, clear it.
+                FileUtils.clearPersistedUri(this) // Persisted but no permissions, clear it.
             }
         }
 

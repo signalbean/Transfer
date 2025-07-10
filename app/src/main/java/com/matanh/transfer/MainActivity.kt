@@ -32,6 +32,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.matanh.transfer.server.FileServerService
+import com.matanh.transfer.server.ServerState
+import com.matanh.transfer.ui.AboutActivity
+import com.matanh.transfer.ui.MainViewModel
+import com.matanh.transfer.ui.ReportErrorActivity
+import com.matanh.transfer.ui.SettingsActivity
+import com.matanh.transfer.util.Constants
+import com.matanh.transfer.util.FileAdapter
+import com.matanh.transfer.util.FileItem
+import com.matanh.transfer.util.FileUtils
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -75,26 +85,9 @@ class MainActivity : AppCompatActivity() {
 
     private val uploadFileLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            uri?.let { sourceUri ->
-                if (currentSelectedFolderUri == null) {
-                    Toast.makeText(
-                        this, getString(R.string.shared_folder_not_selected), Toast.LENGTH_SHORT
-                    ).show()
-                    return@registerForActivityResult
-                }
-                val fileName = Utils.getFileName(this, sourceUri)
-                val copiedFile = Utils.copyUriToAppDir(
-                    this, sourceUri, currentSelectedFolderUri!!, fileName ?: "upload.txt"
-                )
-                if (copiedFile != null && copiedFile.exists()) {
-                    Toast.makeText(
-                        this, getString(R.string.file_uploaded, copiedFile.name), Toast.LENGTH_SHORT
-                    ).show()
-                    viewModel.loadFiles(currentSelectedFolderUri!!)
-                } else {
-                    Toast.makeText(this, getString(R.string.file_upload_failed), Toast.LENGTH_SHORT)
-                        .show()
-                }
+            uri?.let {
+                viewModel.onFileSelectedForUpload(it)
+
             }
         }
 
@@ -277,27 +270,24 @@ class MainActivity : AppCompatActivity() {
 
     // handle share
     private fun handleShareIntent(intent: Intent?) {
-        when (intent?.action) {
-            Intent.ACTION_SEND -> {
-                if (intent.type?.startsWith("text/plain") == true) {
-                    handleSharedText(intent)
-                } else {
-                    handleSharedFile(intent)
-                }
-            }
-
-            Intent.ACTION_SEND_MULTIPLE -> {
-                handleMultipleFiles(intent)
+        intent?.let { viewModel.handleShareIntent(it) }
+    }
+    private fun observeToastMessages() {
+        // TODO: handle each toast return properly
+        lifecycleScope.launch {
+            viewModel.toastMessage.collect { message ->
+                Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
             }
         }
     }
+
 
     private fun handleSharedText(intent: Intent) {
         val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
         if (sharedText.isNullOrEmpty() || currentSelectedFolderUri == null) return
 
         val file =
-            Utils.createTextFileInDir(this, currentSelectedFolderUri!!, "share", "txt", sharedText)
+            FileUtils.createTextFileInDir(this, currentSelectedFolderUri!!, "share", "txt", sharedText)
 
         if (file != null && file.exists()) {
             Toast.makeText(
@@ -313,8 +303,8 @@ class MainActivity : AppCompatActivity() {
         val fileUri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM) ?: return
         if (currentSelectedFolderUri == null) return
 
-        val fileName = Utils.getFileName(this, fileUri) ?: "shared_file"
-        val copiedFile = Utils.copyUriToAppDir(this, fileUri, currentSelectedFolderUri!!, fileName)
+        val fileName = FileUtils.getFileName(this, fileUri) ?: "shared_file"
+        val copiedFile = FileUtils.copyUriToAppDir(this, fileUri, currentSelectedFolderUri!!, fileName)
 
         if (copiedFile != null && copiedFile.exists()) {
             Toast.makeText(
@@ -332,8 +322,8 @@ class MainActivity : AppCompatActivity() {
 
         var successCount = 0
         for (uri in uris) {
-            val fileName = Utils.getFileName(this, uri) ?: "file"
-            if (Utils.copyUriToAppDir(this, uri, currentSelectedFolderUri!!, fileName) != null) {
+            val fileName = FileUtils.getFileName(this, uri) ?: "file"
+            if (FileUtils.copyUriToAppDir(this, uri, currentSelectedFolderUri!!, fileName) != null) {
                 successCount++
             }
         }
@@ -466,7 +456,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startFileServer(folderUri: Uri) {
-        if (!Utils.canWriteToUri(this, folderUri)) {
+        if (!FileUtils.canWriteToUri(this, folderUri)) {
             Toast.makeText(this, getString(R.string.no_write_permission), Toast.LENGTH_LONG).show()
             startActivity(Intent(this, SettingsActivity::class.java))
             return
@@ -531,9 +521,7 @@ class MainActivity : AppCompatActivity() {
             ).setMessage(getString(R.string.confirm_delete_multiple_message, files.size))
             .setNegativeButton(getString(R.string.cancel), null)
             .setPositiveButton(getString(R.string.delete)) { _, _ ->
-                files.forEach { fileItem ->
-                    DocumentFile.fromSingleUri(this, fileItem.uri)?.delete()
-                }
+                viewModel.handleDeleteAction(files)
                 Toast.makeText(
                     this,
                     getString(R.string.files_deleted_successfully, files.size),
@@ -554,7 +542,7 @@ class MainActivity : AppCompatActivity() {
             val item = clipboard.primaryClip?.getItemAt(0)
             val textToPaste = item?.text?.toString()
             if (!textToPaste.isNullOrEmpty()) {
-                val file = Utils.createTextFileInDir(
+                val file = FileUtils.createTextFileInDir(
                     this, currentSelectedFolderUri!!, "paste", "txt", textToPaste
                 )
                 if (file != null && file.exists()) {

@@ -1,6 +1,5 @@
-package com.matanh.transfer
+package com.matanh.transfer.util
 
-import InMemoryLogTree
 import android.app.Application
 import timber.log.Timber
 

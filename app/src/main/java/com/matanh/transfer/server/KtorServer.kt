@@ -1,8 +1,10 @@
-package com.matanh.transfer
+package com.matanh.transfer.server
 
 import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
+import com.matanh.transfer.util.FileUtils
+import com.matanh.transfer.R
 import io.ktor.http.ContentDisposition
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
@@ -188,7 +190,8 @@ suspend fun handleFileUpload(
     // 2. Generate a unique filename
     val nameWithoutExt = sanitizedFileName.substringBeforeLast('.', sanitizedFileName)
     val extension = sanitizedFileName.substringAfterLast('.', "")
-    val uniqueFileName = Utils.generateUniqueFileName(baseDocumentFile, nameWithoutExt, extension)
+    val uniqueFileName =
+        FileUtils.generateUniqueFileName(baseDocumentFile, nameWithoutExt, extension)
 
 
     // 3. Determine effective MIME type and create the target file
@@ -243,7 +246,7 @@ fun handleFileDelete(
 }
 
 // --- Ktor Application Module ---
-fun Application.transferServerModule(
+fun Application.ktorServer(
     context: Context,
     serviceProviderLambda: () -> FileServerService?,
     sharedDirUri: Uri
@@ -354,7 +357,7 @@ fun Application.transferServerModule(
                                 FileInfo(
                                     name = docFile.name ?: "Unknown",
                                     size = docFile.length(),
-                                    formattedSize = Utils.formatFileSize(docFile.length()),
+                                    formattedSize = FileUtils.formatFileSize(docFile.length()),
                                     lastModified = dateFormat.format(lastModifiedDate),
                                     type = docFile.type ?: "unknown",
                                     downloadUrl = "/api/download/${

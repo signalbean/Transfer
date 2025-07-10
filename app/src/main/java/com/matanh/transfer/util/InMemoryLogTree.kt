@@ -1,3 +1,5 @@
+package com.matanh.transfer.util
+
 import android.util.Log
 import timber.log.Timber
 import java.text.SimpleDateFormat

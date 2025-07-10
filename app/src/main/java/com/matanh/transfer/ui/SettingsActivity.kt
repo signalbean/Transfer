@@ -1,4 +1,4 @@
-package com.matanh.transfer
+package com.matanh.transfer.ui
 
 import android.net.Uri
 import android.os.Bundle
@@ -13,7 +13,9 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceManager
+import com.matanh.transfer.util.Constants
+import com.matanh.transfer.util.FileUtils
+import com.matanh.transfer.R
 
 
 class SettingsActivity : AppCompatActivity() {
@@ -21,7 +23,7 @@ class SettingsActivity : AppCompatActivity() {
     private val selectFolderLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
             if (uri != null) {
-                Utils.persistUriPermission(this, uri)
+                FileUtils.persistUriPermission(this, uri)
                 val prefs = getSharedPreferences(Constants.SHARED_PREFS_NAME, MODE_PRIVATE)
                 prefs.edit { putString(Constants.EXTRA_FOLDER_URI, uri.toString()) }
                 Toast.makeText(this, "Shared folder selected", Toast.LENGTH_SHORT).show()

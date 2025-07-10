@@ -1,4 +1,4 @@
-package com.matanh.transfer
+package com.matanh.transfer.util
 
 object Constants {
     const val SERVER_PORT = 8000

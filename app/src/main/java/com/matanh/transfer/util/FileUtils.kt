@@ -1,41 +1,14 @@
-package com.matanh.transfer
+package com.matanh.transfer.util
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.net.wifi.WifiManager
 import android.provider.OpenableColumns
 import androidx.core.content.edit
 import androidx.documentfile.provider.DocumentFile
-import java.math.BigInteger
-import java.net.InetAddress
-import java.nio.ByteOrder
 
-object Utils {
-    fun getLocalIpAddress(context: Context): String? {
-        val wifiManager =
-            context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        if (!wifiManager.isWifiEnabled) return null
-
-        val connectionInfo = wifiManager.connectionInfo
-        val ipAddress = connectionInfo.ipAddress
-
-        // Convert little-endian to big-endian if needed
-        val ip = if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
-            Integer.reverseBytes(ipAddress)
-        } else {
-            ipAddress
-        }
-
-        val ipByteArray = BigInteger.valueOf(ip.toLong()).toByteArray()
-        return try {
-            InetAddress.getByAddress(ipByteArray).hostAddress
-        } catch (ex: Exception) {
-            null
-        }
-    }
-
+object FileUtils {
     fun getFileName(context: Context, uri: Uri): String? {
         var name: String? = null
         if (uri.scheme == "content") {
