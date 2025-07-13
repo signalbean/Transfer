@@ -1,4 +1,4 @@
-package com.matanh.transfer
+package com.matanh.transfer.server
 
 sealed class ServerState {
     object Starting : ServerState()

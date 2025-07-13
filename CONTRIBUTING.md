@@ -40,7 +40,7 @@ This setup live-reloads the site and forwards `/api/*` requests to the emulator.
 
 ### HTTP Server (Ktor)
 
-- API endpoints (such as /api/upload): `TransferServerModule`
+- API endpoints (such as /api/upload): `KtorServer`
 - Server features (like password protection): `FileServerService`
 
 ---

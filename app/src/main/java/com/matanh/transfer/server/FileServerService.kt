@@ -1,4 +1,4 @@
-package com.matanh.transfer
+package com.matanh.transfer.server
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -14,6 +14,9 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
+import com.matanh.transfer.util.Constants
+import com.matanh.transfer.MainActivity
+import com.matanh.transfer.R
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
@@ -248,7 +251,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
                 val serviceProvider = { this@FileServerService }
                 ktorServer =
                     embeddedServer(CIO, port = Constants.SERVER_PORT, host = "0.0.0.0", module = {
-                        transferServerModule(
+                        ktorServer(
                             applicationContext, serviceProvider, currentSharedFolderUri!!
                         )
                     }).apply {

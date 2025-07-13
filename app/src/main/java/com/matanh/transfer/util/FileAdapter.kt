@@ -1,4 +1,4 @@
-package com.matanh.transfer
+package com.matanh.transfer.util
 
 import android.view.LayoutInflater
 import android.view.View
@@ -8,6 +8,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.matanh.transfer.R
 
 class FileAdapter(
     private var files: List<FileItem>,
@@ -26,7 +27,7 @@ class FileAdapter(
 
         fun bind(file: FileItem, position: Int, isSelected: Boolean) {
             tvName.text = file.name
-            tvSize.text = Utils.formatFileSize(file.size)
+            tvSize.text = FileUtils.formatFileSize(file.size)
 
 
             if (isSelected) {

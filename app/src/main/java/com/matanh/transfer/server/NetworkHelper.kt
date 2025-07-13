@@ -1,4 +1,4 @@
-package com.matanh.transfer
+package com.matanh.transfer.server
 
 import android.content.Context
 import android.net.ConnectivityManager
