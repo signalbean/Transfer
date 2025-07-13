@@ -63,10 +63,12 @@ Directly from [github releases](https://github.com/matan-h/Transfer/releases) (Y
 It's designed to be that simple. Enjoy your new wireless drive.
 
 ## FAQ
+### Why does my browser show an error?
+If your browser displays errors like `ERR_SSL_PROTOCOL_ERROR`, `ERR_CONNECTION_CLOSED`, or `SSL_ERROR_RX_RECORD_TOO_LONG`, it's probably because you're trying to open the site using **HTTPS** instead of **HTTP**. To fix, change the URL from `https://...` to `http://....`
+
+
 ### Can I set a specific IP address to use every time?
 Yes, you can set a [static IP](https://junipersys.com/support/article/14695) on your Android device.
-
-[asked here](https://www.reddit.com/r/fossdroid/comments/1l3yi6m/comment/mw9t8lt)
 
 ### Can I use Transfer without an internet connection?
 Yes, Transfer works over your local Wi-Fi network, so an internet connection is not required. However, all devices must be connected to the same local network.
@@ -88,6 +90,7 @@ It becomes `T1` :)
 
 Any contributions, bugs, or feedback are welcome!
 Feel free to open an issue or PR.
+To get started, look at the `CONTRIBUTING.md` file
 
 ## License
 this repo is Licensed under the MIT license.
