@@ -66,7 +66,8 @@ if not pathlib.Path(ASSETS).exists():
 
 try:
     print(f"[serve.py] Checking API at {API_BASE}/api/ping ...")
-    ping_response = requests.get(f"{API_BASE}/api/ping", timeout=3)
+    print("[serve.py] click 'allow' on the emulator ")
+    ping_response = requests.get(f"{API_BASE}/api/ping", timeout=10)
     if ping_response.text.strip().lower() != "pong":
         raise SystemExit("[serve.py] Unexpected ping response",ping_response.text.strip())
 except Exception as e:
