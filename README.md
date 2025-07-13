@@ -82,7 +82,7 @@ It becomes `T1` :)
 - [ ] add an option to change the port in the settings
 - [ ] fallback to hotspot IP in the display.
 - [x] automatically update the IP when Wifi changes
-- [ ] **Publish a version to google play**. the version on github releases and izzydroid will be ad-free, but the google play version should include ad in the future, to cover costs,etc.
+- [ ] **Publish a version to google play**.
 
 ## Contributing
 
