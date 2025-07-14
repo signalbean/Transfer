@@ -97,62 +97,50 @@ def assets(filename: str) -> Response:
     methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
 )
 def api_proxy(path: str):
-    """
-    /api/anything → <API_BASE>/api/anything
-
-    • streams the *request* body to the back-end
-    • streams the *response* body back to the browser
-    • uses < 1 MB RAM even for multi-GB uploads
-    """
-
-    # Complete target URL
     target_url = f"{API_BASE}/api/{path}"
 
-    # Copy request headers except Host (upstream sets its own)
+    # Copy request headers except problematic ones
     fwd_headers = {
-        k: v for k, v in request.headers if k.lower() != "host"
+        k: v for k, v in request.headers if k.lower() not in ["host", "content-length", "transfer-encoding"]
     }
 
-    # For methods that may carry a body, stream it instead of loading
-    # it all at once:  requests will read from the file-like object as needed
-    body = request.stream if request.method in ("POST", "PUT", "PATCH") else None
+    # Read entire body if applicable
+    body = None
+    if request.method in ("POST", "PUT", "PATCH"):
+        body = request.get_data()  # Fully reads the request body
+        fwd_headers["Content-Length"] = str(len(body))
 
+    # Forward the request
     upstream = SESSION.request(
         method=request.method,
         url=target_url,
         headers=fwd_headers,
         params=request.args,
-        data=body,           # <-- live stream
+        data=body,
         cookies=request.cookies,
-        stream=True,         # <-- stream the *response* too
-        timeout=(60, None),  # 60 s to connect, then no per-chunk read limit
+        stream=True,  # Stream the RESPONSE, not the request
+        timeout=(60, None),
         allow_redirects=False,
     )
 
-    # Remove hop-by-hop headers per RFC 7230 §6.1
-    hop_by_hop = {
-        "connection",
-        "keep-alive",
-        "proxy-authenticate",
-        "proxy-authorization",
-        "te",
-        "trailers",
-        "transfer-encoding",
-        "upgrade",
+    # Remove hop-by-hop headers from response
+    hop_by_hop_res = {
+        "connection", "keep-alive", "proxy-authenticate",
+        "proxy-authorization", "te", "trailers",
+        "transfer-encoding", "upgrade"
     }
     response_headers = [
         (k, v) for k, v in upstream.raw.headers.items()
-        if k.lower() not in hop_by_hop
+        if k.lower() not in hop_by_hop_res
     ]
 
-    # Stream upstream chunks back to the browser
-    def generate():
+    def response_stream():
         for chunk in upstream.iter_content(chunk_size=64 * 1024):
             if chunk:
                 yield chunk
 
     return Response(
-        stream_with_context(generate()),
+        stream_with_context(response_stream()),
         status=upstream.status_code,
         headers=response_headers,
     )
@@ -167,7 +155,7 @@ def main() -> None:
     # Watch all *.html, *.js, *.css recursively under ASSETS
     patterns = ["*.html", "*.js", "*.css"]
     for pattern in patterns:
-        server.watch(os.path.join(ASSETS, "**", pattern))
+        server.watch(os.path.join(ASSETS, pattern))
 
     print(f"\n • Serving   : http://localhost:{PORT}")
     print(f" • Assets    : {ASSETS}")
