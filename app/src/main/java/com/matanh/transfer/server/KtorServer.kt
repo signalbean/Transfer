@@ -533,7 +533,7 @@ fun Application.ktorServer(
                             )
                         }
                     } catch (e: Exception) {
-                        logger.e("Error processing delete request")
+                        logger.e(e,"Error processing delete request")
                         call.respond(
                             HttpStatusCode.InternalServerError,
                             ErrorResponse("Server error during delete: ${e.localizedMessage}")
