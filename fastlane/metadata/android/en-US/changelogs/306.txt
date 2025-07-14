@@ -1,0 +1,6 @@
+New features:
+* web: added a clipboard paste button
+
+ Bug fixes:
+* web: another attempt Style fix on the website for long filenames in small screens (#19)
+* app: server state now correctly update after app refocus
