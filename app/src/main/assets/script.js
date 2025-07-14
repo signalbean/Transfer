@@ -255,7 +255,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- Drag and Drop & File Upload ---
-    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('click', (event) => {
+    if (event.target !== fileInput) { // only click if the click only fall under the dropzone
+        event.stopPropagation();
+        fileInput.click()
+    }
+    }
+    );
 
     dropZone.addEventListener('dragover', (event) => {
         event.preventDefault();
