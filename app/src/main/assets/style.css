@@ -330,7 +330,7 @@ background-color: var(--error-color);
     /* Delete icon becomes red on hover */
     border-color: var(--error-color);
 }
-#files-header-container {
+.header-container {
     display: flex; /* Enable Flexbox */
     justify-content: space-between; /* Puts space between the h2 and the button div */
     align-items: center; /* Vertically aligns items in the middle */

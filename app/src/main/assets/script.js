@@ -6,7 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const noFilesMessage = document.getElementById('no-files-message');
     const themeToggleButton = document.getElementById('theme-toggle');
     const themeIcon = document.getElementById('theme-icon');
-    const downloadAllZipButton = document.getElementById('download-all-zip-button'); // New
+    const downloadAllZipButton = document.getElementById('download-all-zip-button');
+    const pasteButton = document.getElementById('paste-button');
 
     // Modal elements
     const confirmationModalOverlay = document.getElementById('confirmation-modal-overlay');
@@ -206,6 +207,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     }
+    function showError(err) {
+        const errorMsg = document.createElement('p');
+        errorMsg.textContent = err;
+        errorMsg.style.color = 'var(--error-color)';
+        errorMsg.style.marginTop = '10px';
+        errorMsg.style.textAlign = 'center';
+        uploadProgressContainer.appendChild(errorMsg); // Temporary display area
+        setTimeout(() => errorMsg.remove(), 5000); // Remove after 5 seconds
+
+    }
 
     async function deleteFile(fileName) {
         try {
@@ -232,34 +243,27 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 // Using a custom message display instead of alert
                 console.error(`Error deleting file: ${result.error || 'Unknown error'}`);
-                // A simple inline message could be added or a temporary toast notification
-                const errorMsg = document.createElement('p');
-                errorMsg.textContent = `Failed to delete ${fileName}: ${result.error || 'Unknown error'}`;
-                errorMsg.style.color = 'var(--error-color)';
-                errorMsg.style.marginTop = '10px';
-                errorMsg.style.textAlign = 'center';
-                uploadProgressContainer.appendChild(errorMsg); // Temporary display area
-                setTimeout(() => errorMsg.remove(), 5000); // Remove after 5 seconds
+
+                showError(
+                    `Failed to delete ${fileName}: ${result.error || 'Unknown error'}`
+                )
+
             }
         } catch (error) {
             console.error('Failed to send delete request:', error);
-            const errorMsg = document.createElement('p');
-            errorMsg.textContent = `Failed to send delete request for "${fileName}". Please check network.`;
-            errorMsg.style.color = 'var(--error-color)';
-            errorMsg.style.marginTop = '10px';
-            errorMsg.style.textAlign = 'center';
-            uploadProgressContainer.appendChild(errorMsg); // Temporary display area
-            setTimeout(() => errorMsg.remove(), 5000); // Remove after 5 seconds
+            showError(
+               `Failed to send delete request for "${fileName}". Please check network.`
+            )
         }
     }
 
 
     // --- Drag and Drop & File Upload ---
     dropZone.addEventListener('click', (event) => {
-    if (event.target !== fileInput) { // only click if the click only fall under the dropzone
-        event.stopPropagation();
-        fileInput.click()
-    }
+        if (event.target !== fileInput) { // only click if the click only fall under the dropzone
+            event.stopPropagation();
+            fileInput.click()
+        }
     }
     );
 
@@ -373,6 +377,32 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/api/zip';
     });
 
+    pasteButton.addEventListener('click', async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text.length > 0) {
+                // Determine the next available filename
+                let pasteIndex = 1;
+                let fileName = `paste_${pasteIndex}.txt`;
+                const existingFiles = Array.from(filesTableBody.querySelectorAll('[data-file-name]'))
+                    .map(row => row.dataset.fileName);
+
+                while (existingFiles.includes(fileName)) {
+                    pasteIndex++;
+                    fileName = `paste_${pasteIndex}.txt`;
+                }
+
+                const blob = new Blob([text], { type: 'text/plain' });
+                const file = new File([blob], fileName, { type: 'text/plain', lastModified: new Date().getTime() });
+                uploadFile(file, fileName); // Use the uploadFile function
+            } else {
+                showError('Clipboard is empty or contains no text.', 'info');
+            }
+        } catch (err) {
+            console.error('Failed to read clipboard contents: ', err);
+            showError('Failed to read clipboard. Please grant clipboard permissions.', 'error');
+        }
+    });
 
     // Initial load of files when the page is ready
     fetchFiles();

@@ -20,7 +20,15 @@
 
     <main>
         <section id="upload-section">
-            <h2>Upload Files</h2>
+            <div id="section-header-with-button" class="header-container">
+                <h2>Upload Files</h2>
+                <button id="paste-button" class="icon-button" title="Paste from Clipboard">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M19 2h-4.18C14.4 1.18 13.23 0.5 12 0.5S9.6 1.18 9.18 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2ZM12 2.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM19 20H5V4h2v3h10V4h2v16Z" />
+                    </svg>
+                </button>
+            </div>
             <div id="drop-zone">
                 <p>Drag & drop files here or click to select</p>
                 <input type="file" id="file-input" multiple>
@@ -31,12 +39,12 @@
         </section>
 
         <section id="files-section">
-    <div id="files-header-container">
-        <h2>Available Files</h2>
-        <div id="files-actions">
-            <button id="download-all-zip-button" style="display: none;">Download All as Zip</button>
-        </div>
-    </div>
+            <div id="files-header-container" class="header-container">
+                <h2>Available Files</h2>
+                <div id="files-actions">
+                    <button id="download-all-zip-button" style="display: none;">Download All as Zip</button>
+                </div>
+            </div>
 
 
             <div class="table-container">
