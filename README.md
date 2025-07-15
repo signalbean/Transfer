@@ -50,6 +50,16 @@ from [IzzyOnDroid](https://apt.izzysoft.de/fdroid/index/apk/com.matanh.transfer)
 
 Directly from [github releases](https://github.com/matan-h/Transfer/releases) (You can also point Obtainium to this link.)
 
+### Google Play!
+This app is currently in [`Testing`](https://support.google.com/googleplay/android-developer/answer/14151465) phase in google play. To be published, the app needs **at least 12 users** to use it for **14 days**.
+If you're willing, your help in testing would be greatly appreciated!
+
+1. First join the Testers google group (thats required for you to be in the google play allowlist):
+https://groups.google.com/g/transfer-gplay
+
+2. Install the app:
+https://play.google.com/apps/testing/com.matanh.transfer
+
 
 ## Getting Started
 
@@ -84,7 +94,6 @@ It becomes `T1` :)
 - [ ] add an option to change the port in the settings
 - [ ] fallback to hotspot IP in the display.
 - [x] automatically update the IP when Wifi changes
-- [ ] **Publish a version to google play**.
 
 ## Contributing
 
