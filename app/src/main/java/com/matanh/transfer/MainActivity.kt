@@ -12,8 +12,11 @@ import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.ImageButton
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,6 +34,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.textfield.TextInputLayout
 import com.matanh.transfer.server.FileServerService
 import com.matanh.transfer.server.ServerState
 import com.matanh.transfer.ui.AboutActivity
@@ -49,7 +53,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var viewModel: MainViewModel
     private lateinit var tvServerStatus: TextView
-    private lateinit var tvIpAddress: TextView
+
+    private lateinit var actvIps: AutoCompleteTextView
+    private lateinit var tilIps: TextInputLayout
+    private lateinit var ipsAdapter: ArrayAdapter<String>
+
     private lateinit var btnCopyIp: ImageButton
     private lateinit var rvFiles: RecyclerView
     private lateinit var fileAdapter: FileAdapter
@@ -163,27 +171,32 @@ class MainActivity : AppCompatActivity() {
 
     private fun initViews() {
         tvServerStatus = findViewById(R.id.tvServerStatus)
-        tvIpAddress = findViewById(R.id.tvIpAddress)
+        tilIps   = findViewById(R.id.tilIps)
+        actvIps  = findViewById(R.id.actvIps)
         btnCopyIp = findViewById(R.id.btnCopyIp)
         rvFiles = findViewById(R.id.rvFiles)
         fabUpload = findViewById(R.id.fabUpload)
         viewStatusIndicator = findViewById(R.id.viewStatusIndicator)
         tvNoFilesMessage = findViewById(R.id.tvNoFilesMessage)
         btnStartServer = findViewById(R.id.btnStartServer)
+
+        ipsAdapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_dropdown_item_1line,
+            mutableListOf<String>()
+        )
+        actvIps.setAdapter(ipsAdapter)
+
     }
 
     private fun setupClickListeners() {
         btnCopyIp.setOnClickListener {
-            val ipText = tvIpAddress.text.toString()
-            if (ipText.isNotEmpty() && !ipText.equals(
-                    getString(R.string.waiting_for_network), ignoreCase = true
-                )
-            ) {
-                val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                val clip = ClipData.newPlainText("Server IP", ipText)
-                clipboard.setPrimaryClip(clip)
-                Toast.makeText(this, R.string.ip_copied_to_clipboard, Toast.LENGTH_SHORT).show()
-            }
+            val display = actvIps.text?.toString() ?: return@setOnClickListener
+            val raw     = display.substringAfter(": ").trim()
+
+            val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText("IP", raw))
+            Toast.makeText(this, R.string.ip_copied_to_clipboard, Toast.LENGTH_SHORT).show()
         }
         fabUpload.setOnClickListener { uploadFileLauncher.launch("*/*") }
         btnStartServer.setOnClickListener {
@@ -306,7 +319,8 @@ class MainActivity : AppCompatActivity() {
                                 this@MainActivity,
                                 R.drawable.status_indicator_running
                             )
-                            tvIpAddress.text = getString(R.string.server_starting)
+                            updateIpDropdown(emptyList(),getString(R.string.server_starting))
+
                             btnStartServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE
                         }
@@ -323,8 +337,16 @@ class MainActivity : AppCompatActivity() {
                                 this@MainActivity,
                                 R.drawable.status_indicator_running
                             )
-                            tvIpAddress.text = "${state.hosts.mainIp}:${state.port}"
-                            state.hosts
+//                            spinnerIps.text = "${state.hosts.mainIp}:${state.port}"
+                            val hosts = state.hosts
+
+                            val entries = listOfNotNull(
+                                hosts.localIp?.let       { "Local IP: $it:${state.port}" },
+                                hosts.localHostname?.let { "Hostname: $it:${state.port}" },
+                                hosts.hotspotIp?.let     { "Hotspot IP: $it:${state.port}" },
+                            )
+                            updateIpDropdown(entries)
+
                             btnStartServer.visibility = View.GONE
                             btnCopyIp.visibility = View.VISIBLE
                         }
@@ -342,7 +364,7 @@ class MainActivity : AppCompatActivity() {
                                 this@MainActivity,
                                 R.drawable.status_indicator_stopped
                             )
-                            tvIpAddress.text = getString(R.string.waiting_for_network)
+                            updateIpDropdown(emptyList(),getString(R.string.waiting_for_network))
                             btnStartServer.visibility = View.VISIBLE
                             btnCopyIp.visibility = View.INVISIBLE
                         }
@@ -360,7 +382,7 @@ class MainActivity : AppCompatActivity() {
                                 this@MainActivity,
                                 R.drawable.status_indicator_stopped
                             )
-                            tvIpAddress.text = getString(R.string.waiting_for_network)
+                            updateIpDropdown(emptyList(),getString(R.string.server_error_format))
                             btnStartServer.visibility = View.VISIBLE
                             btnCopyIp.visibility = View.INVISIBLE
                         }
@@ -369,6 +391,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    private fun updateIpDropdown(newEntries: List<String>,placeholder:String?=null) {
+        ipsAdapter.apply {
+            clear()
+            addAll(newEntries)
+            notifyDataSetChanged()
+        }
+        // Show either first entry or a placeholder
+        actvIps.setText(
+            newEntries.firstOrNull() ?: (placeholder ?: getString(R.string.waiting_for_network)),
+            false      // don't trigger filtering
+        )
+        // Visibility of copy button
+        btnCopyIp.visibility = if (newEntries.isEmpty()) View.INVISIBLE else View.VISIBLE
+    }
+
 
     private fun observeIpPermissionRequests() {
         if (!isServiceBound || fileServerService == null) return
