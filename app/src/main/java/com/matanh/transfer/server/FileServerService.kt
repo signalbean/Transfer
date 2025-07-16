@@ -101,7 +101,9 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
 
     private fun observeIpChanges() {
         serviceScope.launch {
-            networkHelper.currentIpAddress.collectLatest { ipAddress ->
+            networkHelper.networkInfo.collectLatest { info ->
+                val ipAddress = info.mainIp
+
                 val currentState = _serverState.value
                 if (currentState is ServerState.Error || currentState is ServerState.UserStopped) { // ignore user stopped/error IP changes
                     return@collectLatest
@@ -109,8 +111,8 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
 
                 if (currentState is ServerState.AwaitNetwork || currentState is ServerState.Running) {
                     if (ipAddress != null) {
-                        if (currentState is ServerState.Running && currentState.ip != ipAddress) {
-                            logger.i("IP address changed from ${currentState.ip} to $ipAddress. restarting server.")
+                        if (currentState is ServerState.Running && currentState.hosts.mainIp != ipAddress) {
+                            logger.i("IP address changed from ${currentState.hosts.mainIp} to $ipAddress. restarting server.")
                             startKtorServer()
                         }
                         else{ // ServerState.AwaitNetwork
@@ -118,7 +120,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
                             startKtorServer()
                         }
                         updateNotification()
-                    } else { // ipAddress is null
+                    } else {
                         logger.w("WiFi disconnected. Stopping server.")
                         stopKtorServer(ServerState.AwaitNetwork) // This will also update notification
                     }
@@ -240,7 +242,9 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
             }
 
             try {
-                val ipAddress = networkHelper.currentIpAddress.value
+                val networkState = networkHelper.networkInfo.value
+
+                val ipAddress = networkState.mainIp
                 if (ipAddress == null) {
                     _serverState.value = ServerState.AwaitNetwork
                     logger.e("Failed to get local IP address.")
@@ -258,7 +262,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
                         start(wait = false)
                     }
 
-                _serverState.value = ServerState.Running(ipAddress, Constants.SERVER_PORT)
+                _serverState.value = ServerState.Running(networkState, Constants.SERVER_PORT)
                 logger.i("Ktor Server started on $ipAddress:${Constants.SERVER_PORT}")
                 updateNotification()
 
@@ -400,7 +404,7 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
 
         val (title, text) = when (val state = _serverState.value) {
             is ServerState.Running -> getString(R.string.file_server_notification_title) to getString(
-                R.string.file_server_notification_text, state.ip, state.port
+                R.string.file_server_notification_text, state.hosts.mainIp, state.port
             )
 
             is ServerState.Starting -> getString(R.string.file_server_notification_title) to getString(

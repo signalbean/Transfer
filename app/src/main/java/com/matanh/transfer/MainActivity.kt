@@ -323,7 +323,8 @@ class MainActivity : AppCompatActivity() {
                                 this@MainActivity,
                                 R.drawable.status_indicator_running
                             )
-                            tvIpAddress.text = "${state.ip}:${state.port}"
+                            tvIpAddress.text = "${state.hosts.mainIp}:${state.port}"
+                            state.hosts
                             btnStartServer.visibility = View.GONE
                             btnCopyIp.visibility = View.VISIBLE
                         }
