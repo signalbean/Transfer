@@ -2,6 +2,7 @@ package com.matanh.transfer
 
 import android.content.Context
 import android.view.View
+import android.widget.AutoCompleteTextView
 import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
@@ -159,11 +160,11 @@ class AppFlowTest {
 
         // Verify the IP address is displayed correctly.
         var ipText = ""
-        onView(withId(R.id.tvIpAddress)).perform(object : ViewAction {
-            override fun getConstraints() = isAssignableFrom(TextView::class.java)
+        onView(withId(R.id.actvIps)).perform(object : ViewAction {
+            override fun getConstraints() = isAssignableFrom(AutoCompleteTextView::class.java)
             override fun getDescription() = "Extract text from tvIpAddress"
             override fun perform(uiController: UiController, view: View) {
-                ipText = (view as TextView).text.toString()
+                ipText = (view as AutoCompleteTextView).text.toString()
             }
         })
 

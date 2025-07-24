@@ -45,6 +45,8 @@ import com.matanh.transfer.util.Constants
 import com.matanh.transfer.util.FileAdapter
 import com.matanh.transfer.util.FileItem
 import com.matanh.transfer.util.FileUtils
+import com.matanh.transfer.util.IpEntry
+import com.matanh.transfer.util.IpEntryAdapter
 import com.matanh.transfer.util.ShareHandler
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -56,7 +58,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var actvIps: AutoCompleteTextView
     private lateinit var tilIps: TextInputLayout
-    private lateinit var ipsAdapter: ArrayAdapter<String>
+    private lateinit var ipsAdapter: ArrayAdapter<IpEntry>
 
     private lateinit var btnCopyIp: ImageButton
     private lateinit var rvFiles: RecyclerView
@@ -179,12 +181,8 @@ class MainActivity : AppCompatActivity() {
         viewStatusIndicator = findViewById(R.id.viewStatusIndicator)
         tvNoFilesMessage = findViewById(R.id.tvNoFilesMessage)
         btnStartServer = findViewById(R.id.btnStartServer)
+        ipsAdapter = IpEntryAdapter(this)
 
-        ipsAdapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_dropdown_item_1line,
-            mutableListOf<String>()
-        )
         actvIps.setAdapter(ipsAdapter)
 
     }
@@ -337,14 +335,14 @@ class MainActivity : AppCompatActivity() {
                                 this@MainActivity,
                                 R.drawable.status_indicator_running
                             )
-//                            spinnerIps.text = "${state.hosts.mainIp}:${state.port}"
                             val hosts = state.hosts
 
                             val entries = listOfNotNull(
-                                hosts.localIp?.let       { "Local IP: $it:${state.port}" },
-                                hosts.localHostname?.let { "Hostname: $it:${state.port}" },
-                                hosts.hotspotIp?.let     { "Hotspot IP: $it:${state.port}" },
+                                hosts.localIp?.let    { IpEntry("WiFi:",    "$it:${state.port}") },
+                                hosts.localHostname?.let { IpEntry("Hostname:", "$it:${state.port}") },
+                                hosts.hotspotIp?.let  { IpEntry("Hotspot:",  "$it:${state.port}") }
                             )
+
                             updateIpDropdown(entries)
 
                             btnStartServer.visibility = View.GONE
@@ -391,7 +389,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    private fun updateIpDropdown(newEntries: List<String>,placeholder:String?=null) {
+    private fun updateIpDropdown(newEntries: List<IpEntry>,placeholder:String?=null) {
         ipsAdapter.apply {
             clear()
             addAll(newEntries)
@@ -399,7 +397,7 @@ class MainActivity : AppCompatActivity() {
         }
         // Show either first entry or a placeholder
         actvIps.setText(
-            newEntries.firstOrNull() ?: (placeholder ?: getString(R.string.waiting_for_network)),
+            newEntries.firstOrNull()?.value ?: (placeholder ?: getString(R.string.waiting_for_network)),
             false      // don't trigger filtering
         )
         // Visibility of copy button

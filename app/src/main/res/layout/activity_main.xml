@@ -83,7 +83,7 @@ app:layout_constraintEnd_toEndOf="parent">
                 android:id="@+id/actvIps"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/waiting_for_network"
+                android:hint="@string/ip_address"
                 android:inputType="none"/>
         </com.google.android.material.textfield.TextInputLayout>
 

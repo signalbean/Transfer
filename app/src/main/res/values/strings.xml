@@ -123,6 +123,7 @@
     <string name="stop_server">Stop Server</string>
     <string name="start_server">Start Server</string>
     <string name="server_starting">Server Starting…</string>
+    <string name="ip_address">Ip address</string>
 
 
 </resources>

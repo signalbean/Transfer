@@ -41,6 +41,7 @@ data class NetworkInfo(
 class NetworkHelper(context: Context,
                     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) {
+    private data class IpInfo(val wifiAddress: Inet4Address?, val hotspotIp: String?)
 
     private val applicationContext = context.applicationContext
     private val connectivityManager =
@@ -107,14 +108,20 @@ class NetworkHelper(context: Context,
      * Fetches the current local IP address and updates the state flow.
      */
     private fun refresh() = scope.launch {
-        val newLocalIp  = getWifiIp()
+        val wifiname = getWifiInterfaceName(applicationContext)
+        Timber.i("Wifi interface name: $wifiname")
+
+        val ipInfo = findIpAddresses(wifiname)
+        val newLocalIp = ipInfo.wifiAddress
+        val newHotspot = ipInfo.hotspotIp
+
+
         val newHostname = newLocalIp?.let { findHostname(it) }
-        val newHotspot  = getHotspotIP()
 
         val newSnapshot = NetworkInfo(
-            localIp        = newLocalIp?.hostAddress,
-            localHostname  = newHostname,
-            hotspotIp      = newHotspot,
+            localIp = newLocalIp?.hostAddress,
+            localHostname = newHostname,
+            hotspotIp = newHotspot,
         )
 
         if (newSnapshot != _networkInfo.value) {
@@ -125,6 +132,83 @@ class NetworkHelper(context: Context,
     private suspend fun findHostname(addr: Inet4Address): String? = withContext(Dispatchers.IO) {
         runCatching { addr.canonicalHostName }.getOrNull()?.takeIf { it != addr.hostAddress }
     }
+
+    /**
+     * find the name of the Wi‑Fi interface.
+     */
+    fun getWifiInterfaceName(context: Context): String? {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        for (network in cm.allNetworks) {
+            val caps = cm.getNetworkCapabilities(network) ?: continue
+            // a Wi‑Fi
+            if (!caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) continue
+            // not a VPN
+            if (!caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)) continue
+
+            val lp = cm.getLinkProperties(network)
+            val iface = lp?.interfaceName
+            if (!iface.isNullOrBlank()) return iface
+        }
+        return null
+    }
+
+
+    /**
+     * Scans all active network interfaces to find the device's local IPv4 addresses
+     * for both the Wi‑Fi client and the hotspot.
+     *
+     * If [wifiName], its address will be used
+     * as the Wi‑Fi IP . Otherwise, the first interface will be treated as Wi‑Fi,
+     * and the second (if any) as hotspot.
+     *
+     * @return An [IpInfo] containing the nullable Wi‑Fi and hotspot IP addresses.
+     */
+    private fun findIpAddresses(wifiName:String?): IpInfo {
+        var wifiAddress: Inet4Address? = null
+        var hotspotIp: String? = null
+
+        // Collect all relevant interfaces (Wi‑Fi or hotspot)
+        val interfaces = NetworkInterface
+            .getNetworkInterfaces()
+            .toList()
+            .asSequence()
+            .filter { it.name.startsWith("wlan") || it.name.startsWith("ap") || it.name.startsWith("swlan")|| it.name.startsWith("wifi") }
+            .filter { it.isUp && !it.isLoopback }
+            .toList()
+        if (interfaces.isEmpty()) {
+            Timber.w("No Wi‑Fi or hotspot interfaces found")
+            return IpInfo(null, null)
+        }
+        val chosenWifi = wifiName?.let { name ->
+            interfaces.find { it.name == name } ?: run { Timber.e("Wi‑Fi IP on interface $name not found"); null }
+        }
+        // Determine the hotspot interface as the first other one
+        val chosenHotspot = interfaces.firstOrNull { it.name != chosenWifi?.name }
+
+        // Helper to extract IPv4
+        fun extractIp(nif: NetworkInterface?): Inet4Address? = nif
+            ?.inetAddresses
+            ?.asSequence()
+            ?.filterIsInstance<Inet4Address>()
+            ?.find { !it.isLoopbackAddress }
+
+        // Extract IPs
+        wifiAddress = extractIp(chosenWifi).also {
+            if (it != null) Timber.i("Wi‑Fi on ${chosenWifi?.name} → ${it.hostAddress}")
+            else Timber.w("No IPv4 address on Wi‑Fi interface ${chosenWifi?.name}")
+        }
+
+        hotspotIp = extractIp(chosenHotspot)?.hostAddress?.also {
+            Timber.i("Hotspot on ${chosenHotspot?.name} → $it")
+        } ?: run {
+            Timber.w("No hotspot interface or no IPv4 address on hotspot interface")
+            null
+        }
+
+        return IpInfo(wifiAddress, hotspotIp)
+    }
+
+
 
     /**
      * Scans network interfaces to find the device's local IPv4 address on the WiFi network.
