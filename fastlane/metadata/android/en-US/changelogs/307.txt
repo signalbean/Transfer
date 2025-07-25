@@ -1,0 +1,5 @@
+New features:
+* web: added multiple IPs, so hotspot and WiFi now work (a.2 in #4)
+
+ Bug fixes:
+* app: fix IP on VPN (#26)
