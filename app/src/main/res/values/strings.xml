@@ -124,6 +124,8 @@
     <string name="start_server">Start Server</string>
     <string name="server_starting">Server Starting…</string>
     <string name="ip_address">Ip address</string>
+    <string name="no_app_to_open_file">cannot find any app to open this file</string>
+    <string name="open_with_title">Open file with</string>
 
 
 </resources>

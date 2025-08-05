@@ -203,11 +203,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun openWithFile(fileItem:FileItem?){
+        if (fileItem==null){
+            Toast.makeText(this, getString(R.string.file_not_found), Toast.LENGTH_SHORT).show()
+            return
+        }
+        val documentFile = DocumentFile.fromSingleUri(this, fileItem.uri) ?: run {
+            Toast.makeText(this, getString(R.string.file_not_found), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(documentFile.uri,documentFile.type)
+            // Grant temporary read permission to the receiving app
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        // open the file
+        try{
+            val chooserIntent = Intent.createChooser(intent, getString(R.string.open_with_title))
+            startActivity(chooserIntent)
+        } catch (e:Exception){
+            logger.e(e,"cannot open file %s",fileItem.name);
+            // Fallback if no app can open the file type
+                Toast.makeText(this, getString(R.string.no_app_to_open_file), Toast.LENGTH_SHORT).show()
+        }
+
+    }
+
     private fun setupFileListAndObservers() {
         fileAdapter = FileAdapter(emptyList(), onItemClick = { _, position ->
             if (actionMode != null) {
                 toggleSelection(position)
             } else {
+                openWithFile(fileAdapter.getFileItem(position))
                 // Handle regular item click if needed (e.g., open file preview)
                 // For now, we can share it as a default action or do nothing
                 // shareFile(fileItem) // Example: share on single tap when not in CAB mode

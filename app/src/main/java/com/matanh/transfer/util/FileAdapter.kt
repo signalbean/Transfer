@@ -96,6 +96,9 @@ class FileAdapter(
         selectedItems.clear()
         notifyDataSetChanged() // To redraw all items to their non-selected state
     }
+    fun getFileItem(position: Int): FileItem? {
+        return files.getOrNull(position)
+    }
 
     fun selectAll() {
         if (selectedItems.size == files.size) { // If all are selected, deselect all
