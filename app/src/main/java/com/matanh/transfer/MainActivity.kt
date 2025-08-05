@@ -145,6 +145,7 @@ class MainActivity : AppCompatActivity() {
             if (uri != null) {
                 // If URI is valid, ensure the server is started with it
                 startFileServer(uri)
+                shareHandler.handleIntent(intent, currentSelectedFolderUri)
             } else {
                 // If no URI is set, guide the user to settings
                 navigateToSettingsWithMessage(getString(R.string.select_shared_folder_prompt))
@@ -157,7 +158,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Handle initial intent (e.g., from a share action)
-        shareHandler.handleIntent(intent, currentSelectedFolderUri)
     }
 
     private fun navigateToSettingsWithMessage(message: String) {
