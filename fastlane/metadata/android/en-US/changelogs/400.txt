@@ -1,0 +1,6 @@
+New features:
+
+ * main: files now open when you press them (ref #28)
+
+ Bug fixes:
+* main: minor race condition on file sharing
