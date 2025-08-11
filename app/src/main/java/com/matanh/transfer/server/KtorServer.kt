@@ -173,7 +173,6 @@ suspend fun handleFileUpload(
     context: Context,
     baseDocumentFile: DocumentFile,
     originalFileName: String,
-    mimeType: String?,
     byteReadChannelProvider: suspend () -> ByteReadChannel,
     notifyService: () -> Unit
 ): Pair<String?, String?> {
@@ -193,9 +192,8 @@ suspend fun handleFileUpload(
     val uniqueFileName =
         FileUtils.generateUniqueFileName(baseDocumentFile, nameWithoutExt, extension)
 
-
-    // 3. Determine effective MIME type and create the target file
-    val effectiveMimeType = mimeType ?: ContentType.Application.OctetStream.toString()
+    // Always create with no specific mime (prevent the provider from adding a file extension)
+    val effectiveMimeType = ContentType.Application.OctetStream.toString()
     val newFileDoc = baseDocumentFile.createFile(effectiveMimeType, uniqueFileName)
     if (newFileDoc == null || !newFileDoc.canWrite()) {
         logger.e("Failed to create document file for upload: $uniqueFileName")
@@ -461,7 +459,6 @@ fun Application.ktorServer(
                                         context = applicationContext,
                                         baseDocumentFile = baseDocumentFile,
                                         originalFileName = originalFileName,
-                                        mimeType = part.contentType?.toString(),
                                         byteReadChannelProvider = { part.provider() },
                                         notifyService = { fileServerService.notifyFilePushed() }
                                     )
@@ -558,7 +555,6 @@ fun Application.ktorServer(
                     context = applicationContext,
                     baseDocumentFile = baseDocumentFile,
                     originalFileName = fileName,
-                    mimeType = ContentType.Application.OctetStream.toString(),
                     byteReadChannelProvider = { call.receiveChannel() },
                     notifyService = { fileServerService.notifyFilePushed() }
                 )
