@@ -1,0 +1,6 @@
+Minor release.
+
+*The app passed the testing phase in google play!*
+
+Bug fixes:
+* fix #29 (the server no longer adds .txt in spesific request with form data content-type)
