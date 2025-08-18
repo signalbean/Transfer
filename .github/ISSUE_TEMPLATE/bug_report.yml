@@ -1,0 +1,71 @@
+name: Bug Report
+description: Create a report to help the app improve
+labels: [bug]
+
+body:
+  - type: textarea
+    id: bug_description
+    attributes:
+      label: Describe the bug
+      description: A short description of what the bug is.
+      placeholder: The app crashes when I click X...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected behavior
+      description: A short description of what you expected to happen.
+      placeholder: The app should...
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      description: Enter your device model (e.g., Pixel)
+      placeholder: Pixel 3
+    validations:
+      required: true
+
+  - type: input
+    id: android_version
+    attributes:
+      label: Android version
+      description: You can view it by going to Settings > About phone > Android Version
+      placeholder: Android 16
+    validations:
+      required: true
+
+  - type: input
+    id: app_version
+    attributes:
+      label: App Version
+      description: Version number of the app (can be viewed in Menu > About)
+      placeholder: 1.2.3
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional context
+      description: Optionally add any other context about the problem here. You can also add screenshots.
+      placeholder: Screenshots, logs, or anything else useful.
+    validations:
+      required: false
