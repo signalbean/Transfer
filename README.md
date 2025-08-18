@@ -41,25 +41,17 @@ Imagine you need to transfer a file between your laptop and desktop — but you 
     * **Paste**: Paste text from your phone’s clipboard directly into a new `.txt` file in the shared folder with a single tap.
 
 ## How to get the app
-Recommended way:
-from [IzzyOnDroid](https://apt.izzysoft.de/fdroid/index/apk/com.matanh.transfer) (use an F-Droid client like Neo Store, Droid-ify, or add IzzyOnDroid repo.)
+#### Recommended ways:
+1. from [IzzyOnDroid](https://apt.izzysoft.de/fdroid/index/apk/com.matanh.transfer) (use an F-Droid client like Neo Store, Droid-ify, or add IzzyOnDroid repo.)
 
   <a href="https://apt.izzysoft.de/fdroid/index/apk/com.matanh.transfer">
     <img alt="Get it on IzzyOnDroid" src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroidButtonGreyBorder_nofont.png" height="54">
   </a>
 
-Directly from [github releases](https://github.com/matan-h/Transfer/releases) (You can also point Obtainium to this link.)
+2. [from Google play!](https://play.google.com/store/apps/details?id=com.matanh.transfer) - new
 
-### Google Play!
-This app is currently in [`Testing`](https://support.google.com/googleplay/android-developer/answer/14151465) phase in google play. To be published, the app needs **at least 12 users** to use it for **14 days**.
-If you're willing, your help in testing would be greatly appreciated!
-
-1. First join the Testers google group (thats required for you to be in the google play allowlist):
-https://groups.google.com/g/transfer-gplay
-
-2. Install the app:
-https://play.google.com/apps/testing/com.matanh.transfer
-
+#### Other ways
+Directly from [github releases](https://github.com/matan-h/Transfer/releases) (and you can also point Obtainium to this link.)
 
 ## Getting Started
 
