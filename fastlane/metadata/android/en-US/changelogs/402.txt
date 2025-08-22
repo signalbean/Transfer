@@ -1,0 +1,2 @@
+New features:
+* main: replace error report activity with directly opening github issues. attempting to stop empty reports
