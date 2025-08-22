@@ -16,7 +16,6 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.ImageButton
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,9 +38,9 @@ import com.matanh.transfer.server.FileServerService
 import com.matanh.transfer.server.ServerState
 import com.matanh.transfer.ui.AboutActivity
 import com.matanh.transfer.ui.MainViewModel
-import com.matanh.transfer.ui.ReportErrorActivity
 import com.matanh.transfer.ui.SettingsActivity
 import com.matanh.transfer.util.Constants
+import com.matanh.transfer.util.ErrorReport
 import com.matanh.transfer.util.FileAdapter
 import com.matanh.transfer.util.FileItem
 import com.matanh.transfer.util.FileUtils
@@ -568,7 +567,8 @@ class MainActivity : AppCompatActivity() {
             }
 
             R.id.action_report_error -> {
-                startActivity(Intent(this, ReportErrorActivity::class.java))
+//                startActivity(Intent(this, ReportErrorActivity::class.java))
+                ErrorReport().openReport(this)
                 true
             }
 
