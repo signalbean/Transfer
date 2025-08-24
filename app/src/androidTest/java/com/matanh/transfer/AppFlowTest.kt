@@ -1,9 +1,10 @@
 package com.matanh.transfer
 
 import android.content.Context
+import android.net.Uri
+import android.util.Log
 import android.view.View
 import android.widget.AutoCompleteTextView
-import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.UiController
@@ -24,14 +25,22 @@ import com.matanh.transfer.util.FileAdapter
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.awaitility.kotlin.await
 import org.junit.*
+import org.junit.Assume.assumeTrue
 import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 import java.io.IOException
+import java.net.URLDecoder
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
-import org.awaitility.kotlin.await
-import org.junit.Assume.assumeTrue
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
+fun String.encodeURL(): String =
+    URLEncoder.encode(this, StandardCharsets.UTF_8.name())
+fun String.decodeURL(): String =
+    URLDecoder.decode(this, StandardCharsets.UTF_8.name())
 
 
 /**
@@ -70,13 +79,16 @@ class AppFlowTest {
     private val testFolderName = "Storage"
     private val testFileName = "test_upload.txt"
     private val testFileContent = "This is a file for integration testing."
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
-        .build()
 
     companion object {
+
+        private val client = OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .build()
         private const val UI_AUTOMATOR_TIMEOUT = 5000L
+        private val createdFiles: MutableSet<String> = mutableSetOf()
+
         private var serverUrl: String? = null
 
         // Clear shared preferences before the test suite runs to ensure a clean state
@@ -84,11 +96,36 @@ class AppFlowTest {
         @JvmStatic
         fun setupClass() {
             val context = ApplicationProvider.getApplicationContext<Context>()
-            val prefs = context.getSharedPreferences(Constants.SHARED_PREFS_NAME, Context.MODE_PRIVATE)
+            val prefs =
+                context.getSharedPreferences(Constants.SHARED_PREFS_NAME, Context.MODE_PRIVATE)
             prefs.edit().clear().commit()
         }
-    }
 
+        @AfterClass
+        @JvmStatic
+        fun tearDownClass() {
+            if (serverUrl == null) return
+
+// Try to delete every created file. Ignore failures but log them.
+            createdFiles.forEach { filename ->
+                try {
+                    val encoded = Uri.encode(filename, null)
+
+                    val deleteReq1 = Request.Builder()
+                        .url("$serverUrl/$encoded")
+                        .delete()
+                        .build();
+                    client.newCall(deleteReq1).execute().close()
+
+                } catch (e: Exception) {
+                    Log.e(
+                        "Test",
+                        "Failed to delete test file '$filename' during cleanup: ${e.message}"
+                    );
+                }
+            }
+        }
+    }
 
     @Before
     fun setUp() {
@@ -96,6 +133,30 @@ class AppFlowTest {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         device = UiDevice.getInstance(instrumentation)
     }
+
+    private fun addToCreated(filename: String) {
+        synchronized(createdFiles) { createdFiles.add(filename) }
+    }
+
+    private fun uploadFileHttp(encodedFilename: String, content: String,mimetype:String="text/plain"): Boolean {
+        val requestBody = content.toRequestBody(mimetype.toMediaType())
+        val request = Request.Builder().url("$serverUrl/$encodedFilename").put(requestBody).build()
+        client.newCall(request).execute().use { resp ->
+            if (resp.isSuccessful) {
+                addToCreated(encodedFilename)
+                return true
+            }
+            return false
+        }
+    }
+    private fun checkFileContent(filenameEncoded: String, expectedContent: String? = null): Boolean {
+        val request = Request.Builder().url("$serverUrl/api/download/$filenameEncoded").get().build()
+            client.newCall(request).execute().use { resp ->
+                if (!resp.isSuccessful) return false
+                if (expectedContent == null) return true
+                val body = resp.body?.string() ?: return false
+                return body == expectedContent
+    }}
 
     @Test
     fun testA_initialSetupAndFolderSelection() {
@@ -121,7 +182,10 @@ class AppFlowTest {
             createFolderButton.click()
 
             // Wait for the dialog and enter the folder name.
-            val editText = device.wait(Until.findObject(By.clazz("android.widget.EditText")), UI_AUTOMATOR_TIMEOUT)
+            val editText = device.wait(
+                Until.findObject(By.clazz("android.widget.EditText")),
+                UI_AUTOMATOR_TIMEOUT
+            )
             Assert.assertNotNull("Could not find EditText for new folder name.", editText)
             editText.text = testFolderName
 
@@ -130,7 +194,8 @@ class AppFlowTest {
             okButton.click()
 
             // Wait for the folder to appear in the list and re-assign the variable
-            storageFolder = device.wait(Until.findObject(By.text(testFolderName)), UI_AUTOMATOR_TIMEOUT)
+            storageFolder =
+                device.wait(Until.findObject(By.text(testFolderName)), UI_AUTOMATOR_TIMEOUT)
             Assert.assertNotNull("Newly created '$testFolderName' folder not found.", storageFolder)
         }
 
@@ -182,7 +247,10 @@ class AppFlowTest {
 
     @Test
     fun testB_fileUploadAndVerification() {
-        Assert.assertNotNull("Server URL not set, cannot run upload test. Ensure testA passes first.", serverUrl)
+        Assert.assertNotNull(
+            "Server URL not set, cannot run upload test. Ensure testA passes first.",
+            serverUrl
+        )
         // step 2.5: allow access
         val allow_request = Request.Builder()
             .url("$serverUrl")
@@ -193,12 +261,11 @@ class AppFlowTest {
             override fun onFailure(call: Call, e: IOException) {
                 // it'll almost certainly timeout—ignore
             }
+
             override fun onResponse(call: Call, response: Response) {
                 response.close()
             }
         })
-
-
 
 
         val allowButton = device.wait(Until.findObject(By.text("ALLOW")), UI_AUTOMATOR_TIMEOUT)
@@ -207,19 +274,8 @@ class AppFlowTest {
 
 
         // --- Step 3: Upload a file via HTTP ---
-        val requestBody = testFileContent.toRequestBody("text/plain".toMediaType())
-        val request = Request.Builder()
-            .url("$serverUrl/$testFileName")
-            .put(requestBody) // Use PUT for simple upload
-            .build()
+        uploadFileHttp(testFileName, testFileContent,"text/plain")
 
-        try {
-            val response = client.newCall(request).execute()
-            Assert.assertTrue("File upload failed with code: ${response.code}", response.isSuccessful)
-            response.close()
-        } catch (e: IOException) {
-            Assert.fail("File upload threw an exception: ${e.message}")
-        }
 
         // --- Step 4: Verify the file appears in the RecyclerView ---
         // The service should trigger a refresh. We wait for the item to appear.
@@ -227,7 +283,13 @@ class AppFlowTest {
         for (i in 0..5) { // Wait up to 5 seconds
             try {
                 onView(withId(R.id.rvFiles))
-                    .perform(RecyclerViewActions.scrollTo<FileAdapter.ViewHolder>(hasDescendant(withText(testFileName))))
+                    .perform(
+                        RecyclerViewActions.scrollTo<FileAdapter.ViewHolder>(
+                            hasDescendant(
+                                withText(testFileName)
+                            )
+                        )
+                    )
                 onView(withText(testFileName)).check(matches(isDisplayed()))
                 isFileVisible = true
                 break
@@ -236,6 +298,7 @@ class AppFlowTest {
             }
         }
         Assert.assertTrue("Uploaded file did not appear in the UI.", isFileVisible)
+        Assert.assertTrue("file content is not as expected",checkFileContent(testFileName, testFileContent))
     }
 
     @Test
@@ -271,6 +334,14 @@ class AppFlowTest {
                 resp.code
             )
         }
+        createdFiles.remove(testFileName) // dont try to delete this file after the tests
+    }
+    fun testD_weirdFilename(){
+        assumeTrue("Server URL not set – did testA fail?", serverUrl != null)
+        val filename = """weird %20!@+#{'$'}%^&*()[]{};,.txt""".encodeURL()
+        val content = "|.|"
+        uploadFileHttp(filename, content)
+        Assert.assertTrue(checkFileContent(filename,content));
     }
 
 }

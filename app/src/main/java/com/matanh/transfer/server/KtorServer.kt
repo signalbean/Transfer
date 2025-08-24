@@ -56,7 +56,6 @@ import kotlinx.serialization.Serializable
 import org.json.JSONObject
 import timber.log.Timber
 import java.io.OutputStream
-import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.channels.Channels
 import java.text.SimpleDateFormat
@@ -110,14 +109,9 @@ suspend fun handleFileDownload(
     call: RoutingCall,
     context: Context,
     baseDocumentFile: DocumentFile,
-    fileNameEncoded: String
+    fileName: String
 ) {
-    // 1. URL Decode filename
-    val fileName = try {
-        URLDecoder.decode(fileNameEncoded, "UTF-8")
-    } catch (e: Exception) {
-        return call.respond(HttpStatusCode.BadRequest, "Invalid file name encoding.")
-    }
+    // 1. URL Decode filename - done automatically by the browser
     // 2. Locate & validate
     val target = baseDocumentFile.findFile(fileName)
     if (target == null || !target.isFile || !target.canRead()) {
@@ -224,22 +218,17 @@ fun handleFileDelete(
     notifyService: () -> Unit
 ): Pair<Boolean, String?> {
 
-    val decodedFileName = try {
-        URLDecoder.decode(fileName, "UTF-8")
-    } catch (e: Exception) {
-        return false to "Invalid file name encoding."
-    }
-    val fileToDeleteDoc = baseDocumentFile.findFile(decodedFileName)
+    val fileToDeleteDoc = baseDocumentFile.findFile(fileName)
     if (fileToDeleteDoc == null || !fileToDeleteDoc.exists()) {
-        return false to "File not found: $decodedFileName"
+        return false to "File not found: $fileName"
     }
     return if (fileToDeleteDoc.delete()) {
-        logger.i("File deleted successfully: $decodedFileName")
+        logger.i("File deleted successfully: $fileName")
         notifyService()
         true to null
     } else {
-        logger.e("Failed to delete file: $decodedFileName")
-        false to "Failed to delete file: $decodedFileName"
+        logger.e("Failed to delete file: $fileName")
+        false to "Failed to delete file: $fileName"
     }
 }
 
