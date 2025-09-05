@@ -90,11 +90,22 @@ app:layout_constraintEnd_toEndOf="parent">
         <ImageButton
             android:id="@+id/btnCopyIp"
             android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@drawable/ic_copy"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/copy_ip_description"
-        app:tint="@color/colorPrimary"/>
+            android:layout_height="48dp"
+            android:src="@drawable/ic_copy"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/copy_ip_description"
+            app:tint="@color/colorPrimary"/>
+        
+        <ImageButton
+            android:id="@+id/btnStopServer"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_stop_black"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/stop_server"
+            app:tint="@color/red"
+            android:visibility="gone"
+            tools:visibility="visible"/>
 
         <Button
             android:id="@+id/btnStartServer"
@@ -157,4 +168,4 @@ android:src="@drawable/ic_upload_device"
 android:contentDescription="@string/upload_file"
 app:tint="@color/white"/>
 
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

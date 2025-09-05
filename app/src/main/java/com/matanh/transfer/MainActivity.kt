@@ -66,6 +66,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewStatusIndicator: View
     private lateinit var tvNoFilesMessage: TextView
     private lateinit var btnStartServer: Button
+    private lateinit var btnStopServer: ImageButton
     private lateinit var shareHandler: ShareHandler
 
     private var fileServerService: FileServerService? = null
@@ -175,6 +176,7 @@ class MainActivity : AppCompatActivity() {
         tilIps   = findViewById(R.id.tilIps)
         actvIps  = findViewById(R.id.actvIps)
         btnCopyIp = findViewById(R.id.btnCopyIp)
+        btnStopServer = findViewById(R.id.btnStopServer)
         rvFiles = findViewById(R.id.rvFiles)
         fabUpload = findViewById(R.id.fabUpload)
         viewStatusIndicator = findViewById(R.id.viewStatusIndicator)
@@ -199,6 +201,12 @@ class MainActivity : AppCompatActivity() {
         btnStartServer.setOnClickListener {
             currentSelectedFolderUri?.let { startFileServer(it) }
                 ?: navigateToSettingsWithMessage(getString(R.string.select_shared_folder_prompt))
+        }
+        btnStopServer.setOnClickListener {
+            Intent(this, FileServerService::class.java).also { intent ->
+                intent.action = Constants.ACTION_STOP_SERVICE
+                startService(intent)
+            }
         }
     }
 
@@ -347,6 +355,7 @@ class MainActivity : AppCompatActivity() {
                             updateIpDropdown(emptyList(),getString(R.string.server_starting))
 
                             btnStartServer.visibility = View.GONE
+                            btnStopServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE
                         }
 
@@ -373,6 +382,7 @@ class MainActivity : AppCompatActivity() {
                             updateIpDropdown(entries)
 
                             btnStartServer.visibility = View.GONE
+                            btnStopServer.visibility = View.VISIBLE
                             btnCopyIp.visibility = View.VISIBLE
                         }
 
@@ -391,6 +401,7 @@ class MainActivity : AppCompatActivity() {
                             )
                             updateIpDropdown(emptyList(),getString(R.string.waiting_for_network))
                             btnStartServer.visibility = View.VISIBLE
+                            btnStopServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE
                         }
 
@@ -409,6 +420,7 @@ class MainActivity : AppCompatActivity() {
                             )
                             updateIpDropdown(emptyList(),getString(R.string.server_error_format))
                             btnStartServer.visibility = View.VISIBLE
+                            btnStopServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE
                         }
                     }
