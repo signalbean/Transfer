@@ -15,7 +15,7 @@
     <string name="server_stopped">Server stopped</string>
 
     <string name="file_server_notification_title">Transfer Server Active</string>
-    <string name="file_server_notification_text">Access files at http://%s:%d</string>
+    <string name="file_server_notification_text">Access files at http://%1$s:%2$d</string>
     <string name="notification_permission_denied">Notification permission denied</string>
 
 
@@ -113,7 +113,7 @@
     <string name="credit">Developed by matan-h • matan-h.com</string>
     <string name="github">GitHub</string>
     <string name="buy_me_a_coffeeText">Buy Me a Coffee</string>
-    <string name="version_name">T%d • Version %s • matan-h</string>
+    <string name="version_name">T%1$d • Version %2$s • matan-h</string>
     <string name="app_logo_CD">app logo</string>
     <string name="about">About</string>
     <string name="back_cd">back</string>
