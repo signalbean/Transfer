@@ -16,6 +16,7 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -46,6 +47,7 @@ import com.matanh.transfer.util.FileItem
 import com.matanh.transfer.util.FileUtils
 import com.matanh.transfer.util.IpEntry
 import com.matanh.transfer.util.IpEntryAdapter
+import com.matanh.transfer.util.QRCodeGenerator
 import com.matanh.transfer.util.ShareHandler
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -60,6 +62,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ipsAdapter: ArrayAdapter<IpEntry>
 
     private lateinit var btnCopyIp: ImageButton
+    private lateinit var btnShowQR: ImageButton
     private lateinit var rvFiles: RecyclerView
     private lateinit var fileAdapter: FileAdapter
     private lateinit var fabUpload: FloatingActionButton
@@ -176,6 +179,7 @@ class MainActivity : AppCompatActivity() {
         tilIps   = findViewById(R.id.tilIps)
         actvIps  = findViewById(R.id.actvIps)
         btnCopyIp = findViewById(R.id.btnCopyIp)
+        btnShowQR = findViewById(R.id.btnShowQR)
         btnStopServer = findViewById(R.id.btnStopServer)
         rvFiles = findViewById(R.id.rvFiles)
         fabUpload = findViewById(R.id.fabUpload)
@@ -196,6 +200,12 @@ class MainActivity : AppCompatActivity() {
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             clipboard.setPrimaryClip(ClipData.newPlainText("IP", raw))
             Toast.makeText(this, R.string.ip_copied_to_clipboard, Toast.LENGTH_SHORT).show()
+        }
+        
+        btnShowQR.setOnClickListener {
+            val display = actvIps.text?.toString() ?: return@setOnClickListener
+            val url = "http://${display.substringAfter(": ").trim()}"
+            showQRCodeDialog(url)
         }
         fabUpload.setOnClickListener { uploadFileLauncher.launch("*/*") }
         btnStartServer.setOnClickListener {
@@ -357,6 +367,7 @@ class MainActivity : AppCompatActivity() {
                             btnStartServer.visibility = View.GONE
                             btnStopServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE
+                            btnShowQR.visibility = View.INVISIBLE
                         }
 
                         is ServerState.Running -> {
@@ -384,6 +395,7 @@ class MainActivity : AppCompatActivity() {
                             btnStartServer.visibility = View.GONE
                             btnStopServer.visibility = View.VISIBLE
                             btnCopyIp.visibility = View.VISIBLE
+                            btnShowQR.visibility = View.VISIBLE
                         }
 
                         ServerState.UserStopped,
@@ -403,6 +415,7 @@ class MainActivity : AppCompatActivity() {
                             btnStartServer.visibility = View.VISIBLE
                             btnStopServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE
+                            btnShowQR.visibility = View.INVISIBLE
                         }
 
                         is ServerState.Error -> {
@@ -422,6 +435,7 @@ class MainActivity : AppCompatActivity() {
                             btnStartServer.visibility = View.VISIBLE
                             btnStopServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE
+                            btnShowQR.visibility = View.INVISIBLE
                         }
                     }
                 }
@@ -439,8 +453,9 @@ class MainActivity : AppCompatActivity() {
             newEntries.firstOrNull()?.value ?: (placeholder ?: getString(R.string.waiting_for_network)),
             false      // don't trigger filtering
         )
-        // Visibility of copy button
+        // Visibility of copy and QR buttons
         btnCopyIp.visibility = if (newEntries.isEmpty()) View.INVISIBLE else View.VISIBLE
+        btnShowQR.visibility = if (newEntries.isEmpty()) View.INVISIBLE else View.VISIBLE
     }
 
 
@@ -505,6 +520,31 @@ class MainActivity : AppCompatActivity() {
                 serviceConnection,
                 BIND_AUTO_CREATE
             )
+        }
+    }
+
+    private fun showQRCodeDialog(url: String) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_qr_code, null)
+        val ivQRCode = dialogView.findViewById<ImageView>(R.id.ivQRCode)
+        val tvQRUrl = dialogView.findViewById<TextView>(R.id.tvQRUrl)
+        
+        // Generate QR code
+        val qrBitmap = QRCodeGenerator.generateQRCode(url, 512)
+        if (qrBitmap != null) {
+            ivQRCode.setImageBitmap(qrBitmap)
+            tvQRUrl.text = url
+            
+            MaterialAlertDialogBuilder(this)
+                .setView(dialogView)
+                .setPositiveButton(getString(R.string.copy_to_clipboard)) { _, _ ->
+                    val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Server URL", url))
+                    Toast.makeText(this, R.string.ip_copied_to_clipboard, Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton(getString(R.string.cancel), null)
+                .show()
+        } else {
+            Toast.makeText(this, R.string.qr_code_generation_failed, Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -95,6 +95,16 @@ app:layout_constraintEnd_toEndOf="parent">
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/copy_ip_description"
             app:tint="@color/colorPrimary"/>
+
+        <ImageButton
+            android:id="@+id/btnShowQR"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_qr_code"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/show_qr_code"
+            app:tint="@color/colorPrimary"
+            android:visibility="invisible"/>
         
         <ImageButton
             android:id="@+id/btnStopServer"

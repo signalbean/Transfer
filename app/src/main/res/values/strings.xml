@@ -127,5 +127,12 @@
     <string name="no_app_to_open_file">cannot find any app to open this file</string>
     <string name="open_with_title">Open file with</string>
 
+    <!-- QR Code related strings -->
+    <string name="show_qr_code">Show QR Code</string>
+    <string name="qr_code_title">Scan to Connect</string>
+    <string name="qr_code_description">Scan this QR code with any device to quickly access the server</string>
+    <string name="qr_code_content_description">QR code for server connection</string>
+    <string name="qr_code_generation_failed">Failed to generate QR code</string>
+
 
 </resources>
