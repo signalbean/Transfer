@@ -1,0 +1,8 @@
+New features:
+* main: Add stop server button to the UI (PR #49 by signalbean)
+* main: Add QR code button (PR #52 by signalbean) 
+
+ Bug fixes:
+* server: dont double url-decode (#44)
+* web: block folder drop (#50)
+* main: normal error message if the port is alredy used (#47)
