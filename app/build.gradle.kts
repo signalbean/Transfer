@@ -105,4 +105,8 @@ dependencies {
 
     androidTestImplementation (libs.awaitility.kotlin)
 
+    // QR Code generation
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.android.embedded)
+
 }
