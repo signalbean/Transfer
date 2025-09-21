@@ -265,11 +265,17 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
                 _serverState.value = ServerState.Running(networkState, Constants.SERVER_PORT)
                 logger.i("Ktor Server started on $ipAddress:${Constants.SERVER_PORT}")
                 updateNotification()
-
             } catch (e: Exception) {
+                val cause = e.cause;
+                if (cause is java.net.BindException){
+                    logger.e("Port ${Constants.SERVER_PORT} is already in use. ")
+                    _serverState.value = ServerState.Error("Port ${Constants.SERVER_PORT} is already in use.")
+                };
+                else{
                 logger.e(e)
-                _serverState.value =
-                    ServerState.Error("Failed to start server: ${e.localizedMessage}")
+                _serverState.value = ServerState.Error("INTERNAL: Failed to start server: ${e.localizedMessage}")
+
+                }
                 ktorServer?.stop(1000, 2000)
                 ktorServer = null
                 updateNotification()

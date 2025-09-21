@@ -190,8 +190,15 @@ class MainActivity : AppCompatActivity() {
 
     }
     private fun getIpURL(): String? {
-        val display = actvIps.text?.toString() ?: return null
+        fun<T> noIp():T? {
+            Toast.makeText(this, getString(R.string.no_ip_available), Toast.LENGTH_SHORT).show();return null
+        }
+        val display = actvIps.text?.toString() ?: return noIp();
+        val preRaw = display.substringBefore(":").trim()
+        if (preRaw.lowercase()=="error") return noIp();
+
         val raw     = display.substringAfter(": ").trim()
+        if (raw.isEmpty()) return noIp();
         return "http://${raw}";
 
         val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
@@ -430,7 +437,7 @@ class MainActivity : AppCompatActivity() {
                                 this@MainActivity,
                                 R.drawable.status_indicator_stopped
                             )
-                            updateIpDropdown(emptyList(),getString(R.string.server_error_format))
+                            updateIpDropdown(emptyList(),getString(R.string.server_error_format,""))
                             btnStartServer.visibility = View.VISIBLE
                             btnStopServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE

@@ -133,6 +133,7 @@
     <string name="qr_code_description">Scan this QR code with any device to quickly access the server</string>
     <string name="qr_code_content_description">QR code for server connection</string>
     <string name="qr_code_generation_failed">Failed to generate QR code</string>
+    <string name="no_ip_available">No IP address available</string>
 
 
 </resources>
