@@ -62,7 +62,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ipsAdapter: ArrayAdapter<IpEntry>
 
     private lateinit var btnCopyIp: ImageButton
-    private lateinit var btnShowQR: ImageButton
     private lateinit var rvFiles: RecyclerView
     private lateinit var fileAdapter: FileAdapter
     private lateinit var fabUpload: FloatingActionButton
@@ -179,7 +178,6 @@ class MainActivity : AppCompatActivity() {
         tilIps   = findViewById(R.id.tilIps)
         actvIps  = findViewById(R.id.actvIps)
         btnCopyIp = findViewById(R.id.btnCopyIp)
-        btnShowQR = findViewById(R.id.btnShowQR)
         btnStopServer = findViewById(R.id.btnStopServer)
         rvFiles = findViewById(R.id.rvFiles)
         fabUpload = findViewById(R.id.fabUpload)
@@ -191,22 +189,26 @@ class MainActivity : AppCompatActivity() {
         actvIps.setAdapter(ipsAdapter)
 
     }
+    private fun getIpURL(): String? {
+        val display = actvIps.text?.toString() ?: return null
+        val raw     = display.substringAfter(": ").trim()
+        return "http://${raw}";
+
+        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("IP", raw))
+        Toast.makeText(this, R.string.ip_copied_to_clipboard, Toast.LENGTH_SHORT).show()
+
+    }
 
     private fun setupClickListeners() {
         btnCopyIp.setOnClickListener {
-            val display = actvIps.text?.toString() ?: return@setOnClickListener
-            val raw     = display.substringAfter(": ").trim()
+            val url  = getIpURL()?:return@setOnClickListener
 
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-            clipboard.setPrimaryClip(ClipData.newPlainText("IP", raw))
+            clipboard.setPrimaryClip(ClipData.newPlainText("IP", url))
             Toast.makeText(this, R.string.ip_copied_to_clipboard, Toast.LENGTH_SHORT).show()
         }
         
-        btnShowQR.setOnClickListener {
-            val display = actvIps.text?.toString() ?: return@setOnClickListener
-            val url = "http://${display.substringAfter(": ").trim()}"
-            showQRCodeDialog(url)
-        }
         fabUpload.setOnClickListener { uploadFileLauncher.launch("*/*") }
         btnStartServer.setOnClickListener {
             currentSelectedFolderUri?.let { startFileServer(it) }
@@ -367,7 +369,6 @@ class MainActivity : AppCompatActivity() {
                             btnStartServer.visibility = View.GONE
                             btnStopServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE
-                            btnShowQR.visibility = View.INVISIBLE
                         }
 
                         is ServerState.Running -> {
@@ -395,7 +396,6 @@ class MainActivity : AppCompatActivity() {
                             btnStartServer.visibility = View.GONE
                             btnStopServer.visibility = View.VISIBLE
                             btnCopyIp.visibility = View.VISIBLE
-                            btnShowQR.visibility = View.VISIBLE
                         }
 
                         ServerState.UserStopped,
@@ -415,7 +415,6 @@ class MainActivity : AppCompatActivity() {
                             btnStartServer.visibility = View.VISIBLE
                             btnStopServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE
-                            btnShowQR.visibility = View.INVISIBLE
                         }
 
                         is ServerState.Error -> {
@@ -435,7 +434,6 @@ class MainActivity : AppCompatActivity() {
                             btnStartServer.visibility = View.VISIBLE
                             btnStopServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE
-                            btnShowQR.visibility = View.INVISIBLE
                         }
                     }
                 }
@@ -455,7 +453,6 @@ class MainActivity : AppCompatActivity() {
         )
         // Visibility of copy and QR buttons
         btnCopyIp.visibility = if (newEntries.isEmpty()) View.INVISIBLE else View.VISIBLE
-        btnShowQR.visibility = if (newEntries.isEmpty()) View.INVISIBLE else View.VISIBLE
     }
 
 
@@ -607,6 +604,12 @@ class MainActivity : AppCompatActivity() {
                 viewModel.pasteFromClipboard()
                 true
             }
+            R.id.action_qr -> {
+                val url  = getIpURL()?:return true;
+                showQRCodeDialog(url)
+                true
+
+            }
 
             R.id.action_settings -> {
                 startActivity(Intent(this, SettingsActivity::class.java))
@@ -619,7 +622,6 @@ class MainActivity : AppCompatActivity() {
             }
 
             R.id.action_report_error -> {
-//                startActivity(Intent(this, ReportErrorActivity::class.java))
                 ErrorReport().openReport(this)
                 true
             }
