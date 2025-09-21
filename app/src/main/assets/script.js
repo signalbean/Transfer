@@ -281,6 +281,12 @@ document.addEventListener('DOMContentLoaded', () => {
         dropZone.classList.remove('dragover');
         const files = event.dataTransfer.files;
         if (files.length > 0) {
+            // validate there are no folders.
+            if (!([...event.dataTransfer.items].every(item => item.webkitGetAsEntry()?.isFile))){
+                showError("Folders aren't supported. Compress them as ZIP first.");
+                return
+            }
+
             handleFiles(files);
         }
     });
