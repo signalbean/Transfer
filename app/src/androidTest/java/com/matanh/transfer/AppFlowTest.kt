@@ -36,9 +36,31 @@ import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
+
+// --- Helpers to keep JSON access clean ---
+fun JsonObject.string(key: String): String? =
+    this[key]?.jsonPrimitive?.contentOrNull
+
+fun JsonObject.long(key: String): Long? =
+    this[key]?.jsonPrimitive?.longOrNull
+
+fun JsonObject.obj(key: String): JsonObject? =
+    this[key]?.jsonObject
+
+fun JsonObject.array(key: String): JsonArray? =
+    this[key]?.jsonArray
+
 
 fun String.encodeURL(): String =
-    URLEncoder.encode(this, StandardCharsets.UTF_8.name())
+    URLEncoder.encode(this, StandardCharsets.UTF_8.name()).replace("+","%20")
 fun String.decodeURL(): String =
     URLDecoder.decode(this, StandardCharsets.UTF_8.name())
 
@@ -81,6 +103,7 @@ class AppFlowTest {
     private val testFileContent = "This is a file for integration testing."
 
     companion object {
+        private val json = Json { ignoreUnknownKeys = true }
 
         private val client = OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)
@@ -109,7 +132,7 @@ class AppFlowTest {
 // Try to delete every created file. Ignore failures but log them.
             createdFiles.forEach { filename ->
                 try {
-                    val encoded = Uri.encode(filename, null)
+                    val encoded = filename.encodeURL()
 
                     val deleteReq1 = Request.Builder()
                         .url("$serverUrl/$encoded")
@@ -157,6 +180,16 @@ class AppFlowTest {
                 val body = resp.body?.string() ?: return false
                 return body == expectedContent
     }}
+
+    private fun getFilesJson(): JsonObject? {
+        val request = Request.Builder().url("$serverUrl/api/files").get().build()
+
+        client.newCall(request).execute().use { resp ->
+            if (!resp.isSuccessful) return null;
+            val body = resp.body?.string() ?: return null
+            return json.parseToJsonElement(body).jsonObject
+        }}
+
 
     @Test
     fun testA_initialSetupAndFolderSelection() {
@@ -336,12 +369,35 @@ class AppFlowTest {
         }
         createdFiles.remove(testFileName) // dont try to delete this file after the tests
     }
-    fun testD_weirdFilename(){
+
+    @Test
+    fun testD_FilenameEncoding(){
         assumeTrue("Server URL not set – did testA fail?", serverUrl != null)
-        val filename = """weird %20!@+#{'$'}%^&*()[]{};,.txt""".encodeURL()
-        val content = "|.|"
-        uploadFileHttp(filename, content)
-        Assert.assertTrue(checkFileContent(filename,content));
+
+        val filename1 = "a+b c.py"
+        val filename2 = "a b+c.py"
+        val content1 = "+"
+        val content2 = "space"
+        uploadFileHttp(filename1.encodeURL(), content1)
+        uploadFileHttp(filename2.encodeURL(), content2)
+
+        Assert.assertTrue(checkFileContent(filename1.encodeURL(),content1));
+        Assert.assertTrue(checkFileContent(filename2.encodeURL(),content2));
+
+        val jsonObj = getFilesJson()
+        val files = jsonObj?.array("files") ?: return
+        val file1 = files.map { it.jsonObject }.firstOrNull { it.string("name") ==filename1 }
+        val file2 = files.map { it.jsonObject }.firstOrNull { it.string("name") == filename2 }
+        Assert.assertNotNull("File 'a+b c.py' not found in JSON", file1)
+        Assert.assertNotNull("File 'a b+c.py' not found in JSON", file2)
+        Assert.assertTrue(
+            "Wrong encoding for 'a+b c.py': ${file1?.string("downloadUrl")}",
+            file1?.string("downloadUrl")?.endsWith("a%2Bb%20c.py") == true
+        )
+        Assert.assertTrue(
+            "Wrong encoding for 'a b+c.py': ${file2?.string("downloadUrl")}",
+            file2?.string("downloadUrl")?.endsWith("a%20b%2Bc.py") == true
+        )
     }
 
 }
