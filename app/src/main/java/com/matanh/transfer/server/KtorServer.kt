@@ -351,8 +351,8 @@ fun Application.ktorServer(
                                         URLEncoder.encode(
                                             docFile.name,
                                             "UTF-8"
-                                        )
-                                    }"
+                                        ).replace("+", "%20")
+                                    }" // URL-encode the filename using the correct way for path segments.
                                 )
                             }
                         logger.d("Files list: $filesList")
