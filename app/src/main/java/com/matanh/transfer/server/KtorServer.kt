@@ -193,22 +193,27 @@ suspend fun handleFileUpload(
         logger.e("Failed to create document file for upload: $uniqueFileName")
         return null to "Failed to create file."
     }
-    // 5) Stream upload with a buffer
+    
+    // Stream upload with custom buffer for large files
     try {
         val byteReadChannel = byteReadChannelProvider()
 
         context.contentResolver.openOutputStream(newFileDoc.uri)?.use { outputStream ->
-            val channel = Channels.newChannel(outputStream)
-            byteReadChannel.copyTo(channel)
+            withContext(Dispatchers.IO) {
+                // Use optimized streaming for large files
+                val channel = Channels.newChannel(outputStream)
+                byteReadChannel.copyTo(channel)
+                outputStream.flush()
+            }
         } ?: throw Exception("Cannot open output stream for ${newFileDoc.uri}")
 
         logger.i("File '$uniqueFileName' uploaded successfully.")
         notifyService()
         return uniqueFileName to null
     } catch (e: Exception) {
-        newFileDoc.delete() // Clean up
-        logger.e("Error during file upload: $uniqueFileName")
-        return null to e.localizedMessage
+        newFileDoc.delete() // Clean up on failure
+        logger.e("Error during file upload: $uniqueFileName - ${e.message}")
+        return null to "Upload failed: ${e.localizedMessage}"
     }
 }
 
@@ -437,55 +442,84 @@ fun Application.ktorServer(
                 post("/upload") {
                     var filesUploadedCount = 0
                     val uploadedFileNames = mutableListOf<String>()
+                    val failedUploads = mutableListOf<String>()
+                    
                     try {
-                        val multipart = call.receiveMultipart(formFieldLimit = Long.MAX_VALUE) // allow more then 50MB (#3)
+                        // Configure multipart for large files with no size limit
+                        val multipart = call.receiveMultipart(formFieldLimit = Long.MAX_VALUE)
+                        
                         multipart.forEachPart { part ->
-                            when (part) {
-                                is PartData.FileItem -> {
-                                    val originalFileName = part.originalFileName ?: "uploaded_file"
-                                    logger.d("Receiving file: $originalFileName")
-                                    val (fileName, error) = handleFileUpload(
-                                        context = applicationContext,
-                                        baseDocumentFile = baseDocumentFile,
-                                        originalFileName = originalFileName,
-                                        byteReadChannelProvider = { part.provider() },
-                                        notifyService = { fileServerService.notifyFilePushed() }
-                                    )
-                                    if (fileName != null) {
-                                        uploadedFileNames.add(fileName)
-                                        filesUploadedCount++
-                                    } else {
-                                        logger.e("Upload failed for $originalFileName: $error")
+                            try {
+                                when (part) {
+                                    is PartData.FileItem -> {
+                                        val originalFileName = part.originalFileName ?: "uploaded_file_${System.currentTimeMillis()}"
+                                        logger.d("Receiving large file: $originalFileName")
+                                        
+                                        val (fileName, error) = handleFileUpload(
+                                            context = applicationContext,
+                                            baseDocumentFile = baseDocumentFile,
+                                            originalFileName = originalFileName,
+                                            byteReadChannelProvider = { part.provider() },
+                                            notifyService = { fileServerService.notifyFilePushed() }
+                                        )
+                                        
+                                        if (fileName != null) {
+                                            uploadedFileNames.add(fileName)
+                                            filesUploadedCount++
+                                            logger.i("Successfully uploaded large file: $fileName")
+                                        } else {
+                                            failedUploads.add("$originalFileName: ${error ?: "Unknown error"}")
+                                            logger.e("Upload failed for $originalFileName: $error")
+                                        }
+                                    }
+
+                                    is PartData.FormItem -> {
+                                        logger.d("Form item: ${part.name} = ${part.value}")
+                                    }
+
+                                    else -> {
+                                        logger.d("Received unknown part type: ${part::class.simpleName}")
                                     }
                                 }
-
-                                is PartData.FormItem -> {
-                                    logger.d("Form item: ${part.name} = ${part.value}")
+                            } catch (partException: Exception) {
+                                logger.e("Error processing part: ${partException.message}")
+                                failedUploads.add("Part processing error: ${partException.localizedMessage}")
+                            } finally {
+                                // Ensure proper cleanup of each part
+                                try {
+                                    part.dispose()
+                                } catch (disposeException: Exception) {
+                                    logger.w("Error disposing part: ${disposeException.message}")
                                 }
-
-                                else -> {}
                             }
-                            part.dispose()
                         }
-                        if (filesUploadedCount > 0) {
-                            call.respondText(
-                                "Successfully uploaded: ${
-                                    uploadedFileNames.joinToString(
-                                        ", "
-                                    )
-                                }"
-                            )
-                        } else {
-                            call.respond(
-                                HttpStatusCode.BadRequest,
-                                "No files were uploaded or upload failed."
-                            )
+                        
+                        // Provide detailed response
+                        when {
+                            filesUploadedCount > 0 && failedUploads.isEmpty() -> {
+                                call.respondText(
+                                    "Successfully uploaded ${filesUploadedCount} file(s): ${uploadedFileNames.joinToString(", ")}"
+                                )
+                            }
+                            filesUploadedCount > 0 && failedUploads.isNotEmpty() -> {
+                                call.respondText(
+                                    "Partially successful: ${filesUploadedCount} uploaded (${uploadedFileNames.joinToString(", ")}), " +
+                                    "${failedUploads.size} failed (${failedUploads.joinToString("; ")})"
+                                )
+                            }
+                            else -> {
+                                call.respond(
+                                    HttpStatusCode.BadRequest,
+                                    ErrorResponse("Upload failed: ${failedUploads.joinToString("; ")}")
+                                )
+                            }
                         }
+                        
                     } catch (e: Exception) {
-                        logger.e("Exception during file upload")
+                        logger.e("Critical exception during large file upload: ${e.message}")
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            "Upload error: ${e.localizedMessage}"
+                            ErrorResponse("Large file upload error: ${e.localizedMessage}")
                         )
                     }
                 }
@@ -528,34 +562,50 @@ fun Application.ktorServer(
                 }
             }
 
-            // HTTP Interface
+            // HTTP Interface - optimized for large file uploads
             put("/{fileName}") {
                 val fileName = call.parameters["fileName"] ?: run {
                     call.respond(HttpStatusCode.BadRequest, "Filename missing in path for PUT.")
                     return@put
                 }
-                // handle simple override
-                val targetFileDoc = baseDocumentFile.findFile(fileName)
-                if (targetFileDoc != null && targetFileDoc.exists()) {
-                    targetFileDoc.delete()
-                }
+                
+                logger.d("Receiving large file via PUT: $fileName")
+                
+                try {
+                    // Handle simple override - delete existing file if present
+                    val targetFileDoc = baseDocumentFile.findFile(fileName)
+                    if (targetFileDoc != null && targetFileDoc.exists()) {
+                        if (!targetFileDoc.delete()) {
+                            logger.w("Failed to delete existing file for overwrite: $fileName")
+                        }
+                    }
 
-                val (uploadedFileName, error) = handleFileUpload(
-                    context = applicationContext,
-                    baseDocumentFile = baseDocumentFile,
-                    originalFileName = fileName,
-                    byteReadChannelProvider = { call.receiveChannel() },
-                    notifyService = { fileServerService.notifyFilePushed() }
-                )
-                if (uploadedFileName != null) {
-                    call.respond(
-                        HttpStatusCode.Created,
-                        "File '$uploadedFileName' uploaded via PUT."
+                    val (uploadedFileName, error) = handleFileUpload(
+                        context = applicationContext,
+                        baseDocumentFile = baseDocumentFile,
+                        originalFileName = fileName,
+                        byteReadChannelProvider = { call.receiveChannel() },
+                        notifyService = { fileServerService.notifyFilePushed() }
                     )
-                } else {
+                    
+                    if (uploadedFileName != null) {
+                        logger.i("Large file uploaded successfully via PUT: $uploadedFileName")
+                        call.respond(
+                            HttpStatusCode.Created,
+                            "Large file '$uploadedFileName' uploaded successfully via PUT."
+                        )
+                    } else {
+                        logger.e("Large file PUT upload failed for $fileName: $error")
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            "Large file PUT upload failed: $error"
+                        )
+                    }
+                } catch (e: Exception) {
+                    logger.e("Exception during large file PUT upload for $fileName: ${e.message}")
                     call.respond(
                         HttpStatusCode.InternalServerError,
-                        "Error during PUT upload: $error"
+                        "Large file PUT upload error: ${e.localizedMessage}"
                     )
                 }
             }

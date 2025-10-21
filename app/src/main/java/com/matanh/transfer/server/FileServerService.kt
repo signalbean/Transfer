@@ -254,11 +254,11 @@ class FileServerService : Service(), SharedPreferences.OnSharedPreferenceChangeL
 
                 val serviceProvider = { this@FileServerService }
                 ktorServer =
-                    embeddedServer(CIO, port = Constants.SERVER_PORT, host = "0.0.0.0", module = {
+                    embeddedServer(CIO, port = Constants.SERVER_PORT, host = "0.0.0.0") {
                         ktorServer(
                             applicationContext, serviceProvider, currentSharedFolderUri!!
                         )
-                    }).apply {
+                    }.apply {
                         start(wait = false)
                     }
 
