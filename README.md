@@ -46,12 +46,14 @@
 **Alternative:**
 - [GitHub Releases](https://github.com/matan-h/Transfer/releases)
 
-## Quick Start
+## Getting Started
 
-1. Install Transfer and select a folder to share  
-2. Tap "Start Server"  
-3. Open the displayed IP address in any browser on the same Wi-Fi  
-4. Allow access when prompted  
+1. Install and open Transfer on your Android device.
+2. Grant necessary permissions and select a folder you wish to share (suggestion: create a new folder called `Storage` in your home directory).
+3. Tap "Start Server."
+4. The app will display an IP address (e.g., `http://192.168.1.X:8000`).
+5. Open this address in a web browser on any other device connected to the same Wi-Fi network.
+6. You're in! If IP permissions are on (default), you'll get a prompt on your phone to allow the new device.  
 
 ## Usage
 
@@ -64,6 +66,12 @@
 **Browser shows SSL errors?** Use `http://` not `https://`  
 **Need consistent IP?** Set up a [static IP](https://junipersys.com/support/article/14695) on your device  
 **Files location?** Uploaded files go to your selected shared folder  
+
+## Planned changes
+
+- [ ] add an option to change the port in the settings
+- [ ] fallback to hotspot IP in the display.
+- [x] automatically update the IP when Wifi changes
 
 ## Contributing
 
