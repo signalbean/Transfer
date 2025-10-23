@@ -334,6 +334,46 @@ fun Application.ktorServer(
                     call.respondText("pong")
                 }
 
+                get("/refresh-settings") {
+                    try {
+                        val settings = fileServerService.getRefreshSettings()
+                        call.respond(settings)
+                    } catch (e: Exception) {
+                        logger.e("Error getting refresh settings: ${e.message}")
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ErrorResponse("Error getting refresh settings: ${e.localizedMessage}")
+                        )
+                    }
+                }
+
+                post("/refresh-settings") {
+                    try {
+                        val requestBody = call.receiveText()
+                        val jsonObject = JSONObject(requestBody)
+                        val enabled = jsonObject.optBoolean("enabled", true)
+                        val intervalSeconds = jsonObject.optInt("intervalSeconds", 30)
+                        
+                        if (intervalSeconds < 5 || intervalSeconds > 300) {
+                            call.respond(
+                                HttpStatusCode.BadRequest,
+                                ErrorResponse("Interval must be between 5 and 300 seconds")
+                            )
+                            return@post
+                        }
+                        
+                        val settings = RefreshSettings(enabled, intervalSeconds)
+                        fileServerService.setRefreshSettings(settings)
+                        call.respond(SuccessResponse("Refresh settings updated"))
+                    } catch (e: Exception) {
+                        logger.e("Error updating refresh settings: ${e.message}")
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ErrorResponse("Error updating refresh settings: ${e.localizedMessage}")
+                        )
+                    }
+                }
+
                 get("/files") {
                     try {
                         val filesList = baseDocumentFile.listFiles()
