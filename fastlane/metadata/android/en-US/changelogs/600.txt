@@ -1,0 +1,3 @@
+Bug fixes:
+* server: fix another url-encoding bug (#53)
+* server: make file system write operation async (to prevent UI freeze)
