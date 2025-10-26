@@ -445,15 +445,14 @@ fun Application.ktorServer(
                     val failedUploads = mutableListOf<String>()
                     
                     try {
-                        // Configure multipart for large files with no size limit
-                        val multipart = call.receiveMultipart(formFieldLimit = Long.MAX_VALUE)
+                        val multipart = call.receiveMultipart()
                         
                         multipart.forEachPart { part ->
                             try {
                                 when (part) {
                                     is PartData.FileItem -> {
-                                        val originalFileName = part.originalFileName ?: "uploaded_file_${System.currentTimeMillis()}"
-                                        logger.d("Receiving large file: $originalFileName")
+                                        val originalFileName = part.originalFileName ?: "uploaded_file"
+                                        logger.d("Receiving file: $originalFileName")
                                         
                                         val (fileName, error) = handleFileUpload(
                                             context = applicationContext,
@@ -466,7 +465,7 @@ fun Application.ktorServer(
                                         if (fileName != null) {
                                             uploadedFileNames.add(fileName)
                                             filesUploadedCount++
-                                            logger.i("Successfully uploaded large file: $fileName")
+                                            logger.i("Successfully uploaded file: $fileName")
                                         } else {
                                             failedUploads.add("$originalFileName: ${error ?: "Unknown error"}")
                                             logger.e("Upload failed for $originalFileName: $error")
@@ -485,12 +484,7 @@ fun Application.ktorServer(
                                 logger.e("Error processing part: ${partException.message}")
                                 failedUploads.add("Part processing error: ${partException.localizedMessage}")
                             } finally {
-                                // Ensure proper cleanup of each part
-                                try {
-                                    part.dispose()
-                                } catch (disposeException: Exception) {
-                                    logger.w("Error disposing part: ${disposeException.message}")
-                                }
+                                part.dispose()
                             }
                         }
                         
@@ -516,10 +510,10 @@ fun Application.ktorServer(
                         }
                         
                     } catch (e: Exception) {
-                        logger.e("Critical exception during large file upload: ${e.message}")
+                        logger.e("Exception during file upload: ${e.message}")
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ErrorResponse("Large file upload error: ${e.localizedMessage}")
+                            ErrorResponse("Upload error: ${e.localizedMessage}")
                         )
                     }
                 }
@@ -562,17 +556,16 @@ fun Application.ktorServer(
                 }
             }
 
-            // HTTP Interface - optimized for large file uploads
+            // HTTP Interface
             put("/{fileName}") {
                 val fileName = call.parameters["fileName"] ?: run {
                     call.respond(HttpStatusCode.BadRequest, "Filename missing in path for PUT.")
                     return@put
                 }
                 
-                logger.d("Receiving large file via PUT: $fileName")
+                logger.d("Receiving file via PUT: $fileName")
                 
                 try {
-                    // Handle simple override - delete existing file if present
                     val targetFileDoc = baseDocumentFile.findFile(fileName)
                     if (targetFileDoc != null && targetFileDoc.exists()) {
                         if (!targetFileDoc.delete()) {
@@ -589,23 +582,23 @@ fun Application.ktorServer(
                     )
                     
                     if (uploadedFileName != null) {
-                        logger.i("Large file uploaded successfully via PUT: $uploadedFileName")
+                        logger.i("File uploaded successfully via PUT: $uploadedFileName")
                         call.respond(
                             HttpStatusCode.Created,
-                            "Large file '$uploadedFileName' uploaded successfully via PUT."
+                            "File '$uploadedFileName' uploaded successfully via PUT."
                         )
                     } else {
-                        logger.e("Large file PUT upload failed for $fileName: $error")
+                        logger.e("PUT upload failed for $fileName: $error")
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            "Large file PUT upload failed: $error"
+                            "PUT upload failed: $error"
                         )
                     }
                 } catch (e: Exception) {
-                    logger.e("Exception during large file PUT upload for $fileName: ${e.message}")
+                    logger.e("Exception during PUT upload for $fileName: ${e.message}")
                     call.respond(
                         HttpStatusCode.InternalServerError,
-                        "Large file PUT upload error: ${e.localizedMessage}"
+                        "PUT upload error: ${e.localizedMessage}"
                     )
                 }
             }
