@@ -16,7 +16,7 @@ class ShareHandler(
     private val viewModel: MainViewModel
 ) {
 
-    fun handleIntent(intent: Intent?, folderUri: Uri?) {
+    suspend fun handleIntent(intent: Intent?, folderUri: Uri?) {
         if (folderUri == null) {
             // Only show a toast if an actual share action was intended
             if (intent?.action == Intent.ACTION_SEND || intent?.action == Intent.ACTION_SEND_MULTIPLE) {
@@ -39,7 +39,7 @@ class ShareHandler(
         }
     }
 
-    private fun handleSharedText(intent: Intent, folderUri: Uri) {
+    private suspend fun handleSharedText(intent: Intent, folderUri: Uri) {
         val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
         if (sharedText.isNullOrEmpty()) return
 
@@ -55,7 +55,7 @@ class ShareHandler(
         }
     }
 
-    private fun handleSharedFile(intent: Intent, folderUri: Uri) {
+    private suspend fun handleSharedFile(intent: Intent, folderUri: Uri) {
         val fileUri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM) ?: return
         val fileName = FileUtils.getFileName(context, fileUri) ?: "shared_file"
         val copiedFile = FileUtils.copyUriToAppDir(context, fileUri, folderUri, fileName)
@@ -70,8 +70,10 @@ class ShareHandler(
         }
     }
 
-    private fun handleMultipleFiles(intent: Intent, folderUri: Uri) {
+    private suspend fun handleMultipleFiles(intent: Intent, folderUri: Uri) {
+        @Suppress("DEPRECATION")
         val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM) ?: return
+
         var successCount = 0
         for (uri in uris) {
             val fileName = FileUtils.getFileName(context, uri) ?: "file_${System.currentTimeMillis()}"

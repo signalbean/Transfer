@@ -7,6 +7,8 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.core.content.edit
 import androidx.documentfile.provider.DocumentFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object FileUtils {
     fun getFileName(context: Context, uri: Uri): String? {
@@ -32,17 +34,17 @@ object FileUtils {
         return name ?: "unknown_file"
     }
 
-    fun generateUniqueFileName(
+    suspend fun generateUniqueFileName(
         docDir: DocumentFile,
         name: String,
         extension: String,
         startFromOne: Boolean = false
-    ): String {
+    ): String = withContext(Dispatchers.IO) {
         // If we’re not starting from 1, try the plain name first:
         if (!startFromOne) {
             val plainName = "$name.$extension"
             if (docDir.findFile(plainName) == null) {
-                return plainName
+                return@withContext plainName
             }
         }
         var count = if (startFromOne) 1 else 2
@@ -53,18 +55,17 @@ object FileUtils {
             count++
         } while (docDir.findFile(candidate) != null)
 
-        return candidate
-
+        return@withContext candidate
     }
 
-    fun copyUriToAppDir(
+    suspend fun copyUriToAppDir(
         context: Context,
         sourceUri: Uri,
         destinationDirUri: Uri,
         filename: String
-    ): DocumentFile? {
+    ): DocumentFile? = withContext(Dispatchers.IO){
         val resolver = context.contentResolver
-        val docDir = DocumentFile.fromTreeUri(context, destinationDirUri) ?: return null
+        val docDir = DocumentFile.fromTreeUri(context, destinationDirUri) ?: return@withContext null
 
         val nameWithoutExt = filename.substringBeforeLast(".")
         val ext = filename.substringAfterLast(".", "")
@@ -75,46 +76,43 @@ object FileUtils {
 
 
         val mimeType = resolver.getType(sourceUri) ?: "application/octet-stream"
-        val newFile = docDir.createFile(mimeType, finalFileName) ?: return null
+        val newFile = docDir.createFile(mimeType, finalFileName) ?: return@withContext null
 
         try {
             resolver.openInputStream(sourceUri)?.use { inputStream ->
                 resolver.openOutputStream(newFile.uri)?.use { outputStream ->
                     inputStream.copyTo(outputStream)
-                    return newFile
+                    return@withContext newFile
                 }
             }
         } catch (e: Exception) {
             e.printStackTrace()
             newFile.delete() // Clean up partially created file
         }
-        return null
+        return@withContext null
     }
 
-    fun createTextFileInDir(
+    suspend fun createTextFileInDir(
         context: Context,
         dirUri: Uri,
         name: String,
         ext: String,
         content: String
-    ): DocumentFile? {
-        // used from share text, from paste text
+    ): DocumentFile? = withContext(Dispatchers.IO) {
+        val docDir = DocumentFile.fromTreeUri(context, dirUri) ?: return@withContext null
+        val fileName = generateUniqueFileName(docDir, name, ext, true)
 
-        val docDir = DocumentFile.fromTreeUri(context, dirUri) ?: return null
-        var fileName = generateUniqueFileName(docDir, name, ext, true)
-
-
-        val targetFile = docDir.createFile("text/plain", fileName) ?: return null
+        val targetFile = docDir.createFile("text/plain", fileName) ?: return@withContext null
         try {
             context.contentResolver.openOutputStream(targetFile.uri)?.use { outputStream ->
                 outputStream.writer().use { it.write(content) }
-                return targetFile
+                return@withContext targetFile
             }
         } catch (e: Exception) {
             e.printStackTrace()
             targetFile.delete()
         }
-        return null
+        return@withContext null
     }
 
     fun persistUriPermission(context: Context, uri: Uri) {

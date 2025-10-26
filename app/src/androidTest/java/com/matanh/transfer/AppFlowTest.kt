@@ -1,7 +1,6 @@
 package com.matanh.transfer
 
 import android.content.Context
-import android.net.Uri
 import android.util.Log
 import android.view.View
 import android.widget.AutoCompleteTextView
@@ -22,20 +21,6 @@ import androidx.test.uiautomator.*
 import com.matanh.transfer.ui.SetupActivity
 import com.matanh.transfer.util.Constants
 import com.matanh.transfer.util.FileAdapter
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.awaitility.kotlin.await
-import org.junit.*
-import org.junit.Assume.assumeTrue
-import org.junit.runner.RunWith
-import org.junit.runners.MethodSorters
-import java.io.IOException
-import java.net.URLDecoder
-import java.util.concurrent.TimeUnit
-import java.util.regex.Pattern
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -44,6 +29,22 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.awaitility.kotlin.await
+import org.junit.*
+import org.junit.Assume.assumeTrue
+import org.junit.runner.RunWith
+import org.junit.runners.MethodSorters
+import java.io.File
+import java.io.IOException
+import java.io.RandomAccessFile
+import java.net.URLDecoder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
 
 // --- Helpers to keep JSON access clean ---
 fun JsonObject.string(key: String): String? =
@@ -60,7 +61,8 @@ fun JsonObject.array(key: String): JsonArray? =
 
 
 fun String.encodeURL(): String =
-    URLEncoder.encode(this, StandardCharsets.UTF_8.name()).replace("+","%20")
+    URLEncoder.encode(this, StandardCharsets.UTF_8.name()).replace("+", "%20")
+
 fun String.decodeURL(): String =
     URLDecoder.decode(this, StandardCharsets.UTF_8.name())
 
@@ -161,7 +163,11 @@ class AppFlowTest {
         synchronized(createdFiles) { createdFiles.add(filename) }
     }
 
-    private fun uploadFileHttp(encodedFilename: String, content: String,mimetype:String="text/plain"): Boolean {
+    private fun uploadFileHttp(
+        encodedFilename: String,
+        content: String,
+        mimetype: String = "text/plain"
+    ): Boolean {
         val requestBody = content.toRequestBody(mimetype.toMediaType())
         val request = Request.Builder().url("$serverUrl/$encodedFilename").put(requestBody).build()
         client.newCall(request).execute().use { resp ->
@@ -172,14 +178,20 @@ class AppFlowTest {
             return false
         }
     }
-    private fun checkFileContent(filenameEncoded: String, expectedContent: String? = null): Boolean {
-        val request = Request.Builder().url("$serverUrl/api/download/$filenameEncoded").get().build()
-            client.newCall(request).execute().use { resp ->
-                if (!resp.isSuccessful) return false
-                if (expectedContent == null) return true
-                val body = resp.body?.string() ?: return false
-                return body == expectedContent
-    }}
+
+    private fun checkFileContent(
+        filenameEncoded: String,
+        expectedContent: String? = null
+    ): Boolean {
+        val request =
+            Request.Builder().url("$serverUrl/api/download/$filenameEncoded").get().build()
+        client.newCall(request).execute().use { resp ->
+            if (!resp.isSuccessful) return false
+            if (expectedContent == null) return true
+            val body = resp.body?.string() ?: return false
+            return body == expectedContent
+        }
+    }
 
     private fun getFilesJson(): JsonObject? {
         val request = Request.Builder().url("$serverUrl/api/files").get().build()
@@ -188,7 +200,8 @@ class AppFlowTest {
             if (!resp.isSuccessful) return null;
             val body = resp.body?.string() ?: return null
             return json.parseToJsonElement(body).jsonObject
-        }}
+        }
+    }
 
 
     @Test
@@ -307,7 +320,7 @@ class AppFlowTest {
 
 
         // --- Step 3: Upload a file via HTTP ---
-        uploadFileHttp(testFileName, testFileContent,"text/plain")
+        uploadFileHttp(testFileName, testFileContent, "text/plain")
 
 
         // --- Step 4: Verify the file appears in the RecyclerView ---
@@ -331,7 +344,10 @@ class AppFlowTest {
             }
         }
         Assert.assertTrue("Uploaded file did not appear in the UI.", isFileVisible)
-        Assert.assertTrue("file content is not as expected",checkFileContent(testFileName, testFileContent))
+        Assert.assertTrue(
+            "file content is not as expected",
+            checkFileContent(testFileName, testFileContent)
+        )
     }
 
     @Test
@@ -371,7 +387,7 @@ class AppFlowTest {
     }
 
     @Test
-    fun testD_FilenameEncoding(){
+    fun testD_FilenameEncoding() {
         assumeTrue("Server URL not set – did testA fail?", serverUrl != null)
 
         val filename1 = "a+b c.py"
@@ -381,12 +397,12 @@ class AppFlowTest {
         uploadFileHttp(filename1.encodeURL(), content1)
         uploadFileHttp(filename2.encodeURL(), content2)
 
-        Assert.assertTrue(checkFileContent(filename1.encodeURL(),content1));
-        Assert.assertTrue(checkFileContent(filename2.encodeURL(),content2));
+        Assert.assertTrue(checkFileContent(filename1.encodeURL(), content1));
+        Assert.assertTrue(checkFileContent(filename2.encodeURL(), content2));
 
         val jsonObj = getFilesJson()
         val files = jsonObj?.array("files") ?: return
-        val file1 = files.map { it.jsonObject }.firstOrNull { it.string("name") ==filename1 }
+        val file1 = files.map { it.jsonObject }.firstOrNull { it.string("name") == filename1 }
         val file2 = files.map { it.jsonObject }.firstOrNull { it.string("name") == filename2 }
         Assert.assertNotNull("File 'a+b c.py' not found in JSON", file1)
         Assert.assertNotNull("File 'a b+c.py' not found in JSON", file2)
@@ -398,6 +414,91 @@ class AppFlowTest {
             "Wrong encoding for 'a b+c.py': ${file2?.string("downloadUrl")}",
             file2?.string("downloadUrl")?.endsWith("a%20b%2Bc.py") == true
         )
+    }
+
+    @Test
+    fun testE_largeFiles() {
+        assumeTrue("Server URL not set – did testA fail?", serverUrl != null)
+
+        val largeFileName = "large_test_1gb.bin"
+        val largeFileSize: Long = 1024L * 1024L * 1024L // 1 GB
+        // IMPORTANT: This may take several seconds and requires sufficient storage space on the device/emulator.
+        val tempFile = createLargeFile(largeFileName, largeFileSize)
+//        addToCreated(largeFileName) // Ensure it's cleaned up in tearDownClass
+        // --- Step 1: Upload the large file via HTTP ---
+        val requestBody = RequestBody.create(
+            "application/octet-stream".toMediaType(),
+            tempFile
+        )
+
+        val encodedFilename = largeFileName.encodeURL()
+        val request = Request.Builder()
+            .url("$serverUrl/$encodedFilename")
+            .put(requestBody)
+            .build()
+
+
+        Log.i(
+            "LargeUploadTest", "Uploading $largeFileName (${largeFileSize} bytes)"
+        )
+        val startTime = System.currentTimeMillis()
+
+
+        client.newCall(request).execute().use { resp ->
+            val duration = System.currentTimeMillis() - startTime
+
+            Assert.assertTrue(
+                "Large file upload failed. HTTP code: ${resp.code}",
+                resp.isSuccessful
+            )
+            addToCreated(largeFileName)
+            Log.i("LargeUploadTest", "Upload of $largeFileName took $duration s.")
+
+        }
+        // --- Step 2: Verify the file appears in the RecyclerView ---
+        await.atMost(10, TimeUnit.SECONDS).ignoreExceptions().untilAsserted {
+            onView(withId(R.id.rvFiles))
+                .perform(
+                    RecyclerViewActions.scrollTo<FileAdapter.ViewHolder>(
+                        hasDescendant(withText(largeFileName))
+                    )
+                )
+            onView(withText(largeFileName)).check(matches(isDisplayed()))
+        }
+        val filesJson = getFilesJson()
+        val files = filesJson?.array("files")
+        val largeFileEntry =
+            files?.map { it.jsonObject }?.firstOrNull { it.string("name") == largeFileName }
+        Assert.assertNotNull("Large file not found in /api/files JSON response.", largeFileEntry)
+        Assert.assertEquals(
+            "Reported file size mismatch.",
+            largeFileSize,
+            largeFileEntry?.long("size")
+        )
+        tempFile.delete()
+
+    }
+
+    private fun createLargeFile(filename: String, sizeBytes: Long): File {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        // Use the app's cache directory for a temporary file
+        val tempFile = File(context.cacheDir, filename)
+
+        if (tempFile.exists()) {
+            tempFile.delete()
+        }
+
+        // Use RandomAccessFile and FileChannel to quickly size the file without holding 1GB in memory
+        RandomAccessFile(tempFile, "rw").use { raf ->
+            // This sets the file size without writing all the data
+            raf.setLength(sizeBytes)
+        }
+        val filelen = tempFile.length()
+        Assert.assertTrue(
+            "Failed to create file of correct size: $filelen (got $sizeBytes)",
+            filelen == sizeBytes
+        )
+        return tempFile
     }
 
 }

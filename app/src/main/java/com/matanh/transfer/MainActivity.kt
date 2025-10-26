@@ -100,24 +100,26 @@ class MainActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             uri?.let { sourceUri ->
                 currentSelectedFolderUri?.let { folder ->
-                    val fileName = FileUtils.getFileName(this, sourceUri)
-                    val copiedFile = FileUtils.copyUriToAppDir(
-                        this, sourceUri, folder, fileName ?: "upload.txt"
-                    )
-                    if (copiedFile != null && copiedFile.exists()) {
-                        Toast.makeText(
-                            this,
-                            getString(R.string.file_uploaded, copiedFile.name),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        viewModel.loadFiles(folder)
-                    } else {
-                        Toast.makeText(
-                            this,
-                            getString(R.string.file_upload_failed),
-                            Toast.LENGTH_SHORT
+                    val fileName = FileUtils.getFileName(this, sourceUri) ?: "upload.txt"
+                    // Call the suspend copy function from a coroutine
+                    lifecycleScope.launch {
+                        val copiedFile = FileUtils.copyUriToAppDir(
+                            this@MainActivity, sourceUri, folder, fileName
                         )
-                            .show()
+                        if (copiedFile != null && copiedFile.exists()) {
+                            Toast.makeText(
+                                this@MainActivity,
+                                getString(R.string.file_uploaded, copiedFile.name),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            viewModel.loadFiles(folder)
+                        } else {
+                            Toast.makeText(
+                                this@MainActivity,
+                                getString(R.string.file_upload_failed),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 } ?: Toast.makeText(
                     this, getString(R.string.shared_folder_not_selected), Toast.LENGTH_SHORT
@@ -147,7 +149,8 @@ class MainActivity : AppCompatActivity() {
             if (uri != null) {
                 // If URI is valid, ensure the server is started with it
                 startFileServer(uri)
-                shareHandler.handleIntent(intent, currentSelectedFolderUri)
+                lifecycleScope.launch {
+                    shareHandler.handleIntent(intent, currentSelectedFolderUri)}
             } else {
                 // If no URI is set, guide the user to settings
                 navigateToSettingsWithMessage(getString(R.string.select_shared_folder_prompt))
@@ -159,7 +162,6 @@ class MainActivity : AppCompatActivity() {
             bindService(intent, serviceConnection, BIND_AUTO_CREATE)
         }
 
-        // Handle initial intent (e.g., from a share action)
     }
 
     private fun navigateToSettingsWithMessage(message: String) {
@@ -170,13 +172,15 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         // Handle intents that arrive while the activity is already running
-        shareHandler.handleIntent(intent, currentSelectedFolderUri)
+        lifecycleScope.launch {
+            shareHandler.handleIntent(intent, currentSelectedFolderUri)
+        }
     }
 
     private fun initViews() {
         tvServerStatus = findViewById(R.id.tvServerStatus)
-        tilIps   = findViewById(R.id.tilIps)
-        actvIps  = findViewById(R.id.actvIps)
+        tilIps = findViewById(R.id.tilIps)
+        actvIps = findViewById(R.id.actvIps)
         btnCopyIp = findViewById(R.id.btnCopyIp)
         btnStopServer = findViewById(R.id.btnStopServer)
         rvFiles = findViewById(R.id.rvFiles)
@@ -189,15 +193,18 @@ class MainActivity : AppCompatActivity() {
         actvIps.setAdapter(ipsAdapter)
 
     }
+
     private fun getIpURL(): String? {
-        fun<T> noIp():T? {
-            Toast.makeText(this, getString(R.string.no_ip_available), Toast.LENGTH_SHORT).show();return null
+        fun <T> noIp(): T? {
+            Toast.makeText(this, getString(R.string.no_ip_available), Toast.LENGTH_SHORT)
+                .show();return null
         }
+
         val display = actvIps.text?.toString() ?: return noIp();
         val preRaw = display.substringBefore(":").trim()
-        if (preRaw.lowercase()=="error") return noIp();
+        if (preRaw.lowercase() == "error") return noIp();
 
-        val raw     = display.substringAfter(": ").trim()
+        val raw = display.substringAfter(": ").trim()
         if (raw.isEmpty()) return noIp();
         return "http://${raw}";
 
@@ -209,13 +216,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         btnCopyIp.setOnClickListener {
-            val url  = getIpURL()?:return@setOnClickListener
+            val url = getIpURL() ?: return@setOnClickListener
 
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             clipboard.setPrimaryClip(ClipData.newPlainText("IP", url))
             Toast.makeText(this, R.string.ip_copied_to_clipboard, Toast.LENGTH_SHORT).show()
         }
-        
+
         fabUpload.setOnClickListener { uploadFileLauncher.launch("*/*") }
         btnStartServer.setOnClickListener {
             currentSelectedFolderUri?.let { startFileServer(it) }
@@ -229,8 +236,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun openWithFile(fileItem:FileItem?){
-        if (fileItem==null){
+    private fun openWithFile(fileItem: FileItem?) {
+        if (fileItem == null) {
             Toast.makeText(this, getString(R.string.file_not_found), Toast.LENGTH_SHORT).show()
             return
         }
@@ -240,18 +247,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(documentFile.uri,documentFile.type)
+            setDataAndType(documentFile.uri, documentFile.type)
             // Grant temporary read permission to the receiving app
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         // open the file
-        try{
+        try {
             val chooserIntent = Intent.createChooser(intent, getString(R.string.open_with_title))
             startActivity(chooserIntent)
-        } catch (e:Exception){
-            logger.e(e,"cannot open file %s",fileItem.name);
+        } catch (e: Exception) {
+            logger.e(e, "cannot open file %s", fileItem.name);
             // Fallback if no app can open the file type
-                Toast.makeText(this, getString(R.string.no_app_to_open_file), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.no_app_to_open_file), Toast.LENGTH_SHORT).show()
         }
 
     }
@@ -371,7 +378,7 @@ class MainActivity : AppCompatActivity() {
                                 this@MainActivity,
                                 R.drawable.status_indicator_running
                             )
-                            updateIpDropdown(emptyList(),getString(R.string.server_starting))
+                            updateIpDropdown(emptyList(), getString(R.string.server_starting))
 
                             btnStartServer.visibility = View.GONE
                             btnStopServer.visibility = View.GONE
@@ -393,9 +400,14 @@ class MainActivity : AppCompatActivity() {
                             val hosts = state.hosts
 
                             val entries = listOfNotNull(
-                                hosts.localIp?.let    { IpEntry("WiFi:",    "$it:${state.port}") },
-                                hosts.localHostname?.let { IpEntry("Hostname:", "$it:${state.port}") },
-                                hosts.hotspotIp?.let  { IpEntry("Hotspot:",  "$it:${state.port}") }
+                                hosts.localIp?.let { IpEntry("WiFi:", "$it:${state.port}") },
+                                hosts.localHostname?.let {
+                                    IpEntry(
+                                        "Hostname:",
+                                        "$it:${state.port}"
+                                    )
+                                },
+                                hosts.hotspotIp?.let { IpEntry("Hotspot:", "$it:${state.port}") }
                             )
 
                             updateIpDropdown(entries)
@@ -418,7 +430,7 @@ class MainActivity : AppCompatActivity() {
                                 this@MainActivity,
                                 R.drawable.status_indicator_stopped
                             )
-                            updateIpDropdown(emptyList(),getString(R.string.waiting_for_network))
+                            updateIpDropdown(emptyList(), getString(R.string.waiting_for_network))
                             btnStartServer.visibility = View.VISIBLE
                             btnStopServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE
@@ -437,7 +449,10 @@ class MainActivity : AppCompatActivity() {
                                 this@MainActivity,
                                 R.drawable.status_indicator_stopped
                             )
-                            updateIpDropdown(emptyList(),getString(R.string.server_error_format,""))
+                            updateIpDropdown(
+                                emptyList(),
+                                getString(R.string.server_error_format, "")
+                            )
                             btnStartServer.visibility = View.VISIBLE
                             btnStopServer.visibility = View.GONE
                             btnCopyIp.visibility = View.INVISIBLE
@@ -447,7 +462,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    private fun updateIpDropdown(newEntries: List<IpEntry>,placeholder:String?=null) {
+
+    private fun updateIpDropdown(newEntries: List<IpEntry>, placeholder: String? = null) {
         ipsAdapter.apply {
             clear()
             addAll(newEntries)
@@ -455,7 +471,8 @@ class MainActivity : AppCompatActivity() {
         }
         // Show either first entry or a placeholder
         actvIps.setText(
-            newEntries.firstOrNull()?.value ?: (placeholder ?: getString(R.string.waiting_for_network)),
+            newEntries.firstOrNull()?.value ?: (placeholder
+                ?: getString(R.string.waiting_for_network)),
             false      // don't trigger filtering
         )
         // Visibility of copy and QR buttons
@@ -531,13 +548,13 @@ class MainActivity : AppCompatActivity() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_qr_code, null)
         val ivQRCode = dialogView.findViewById<ImageView>(R.id.ivQRCode)
         val tvQRUrl = dialogView.findViewById<TextView>(R.id.tvQRUrl)
-        
+
         // Generate QR code
         val qrBitmap = QRCodeGenerator.generateQRCode(url, 512)
         if (qrBitmap != null) {
             ivQRCode.setImageBitmap(qrBitmap)
             tvQRUrl.text = url
-            
+
             MaterialAlertDialogBuilder(this)
                 .setView(dialogView)
                 .setPositiveButton(getString(R.string.copy_to_clipboard)) { _, _ ->
@@ -611,8 +628,9 @@ class MainActivity : AppCompatActivity() {
                 viewModel.pasteFromClipboard()
                 true
             }
+
             R.id.action_qr -> {
-                val url  = getIpURL()?:return true;
+                val url = getIpURL() ?: return true;
                 showQRCodeDialog(url)
                 true
 
